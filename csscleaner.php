@@ -224,6 +224,6 @@ $jsPaths = $styles->getJSClasses();
 $tst = $styles->getJSFromFile($jsPaths);
 
 $new = $styles->cleanClasses($tst);
-var_dump($new);
+
 
 
