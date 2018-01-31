@@ -79,6 +79,7 @@ class ClassesRegular
      * @var string
      */
     /**
+     * css REGEXP
      * @var string
      */
     protected $cssPattern = '~class=\"(?P<class>[_a-z\sA-Z1-9-]{0,})\"~';
@@ -134,9 +135,6 @@ class ClassesRegular
             }
         }
         return $this->dataClasses;
-    }
-    public function getCSSFromFile($data)
-    {
     }
     public function cleanClasses($data)
     {
@@ -211,6 +209,9 @@ class LinksFromSite
 {
     protected $patternHref = '~href="(?<link>.+?)"~';
 
+    /**
+     *
+     */
     public function getAllLinks()
     {
         $resourceLink = file_get_contents($this->mainPageLink);
@@ -219,28 +220,76 @@ class LinksFromSite
         foreach ($allLinks['link'] as $allLink) {
             if ($this->urlWithoutHTML) {
                 // проверяем в том числе и ошибки в коде
-                if ( (stristr($allLink, 'http://') || stristr($allLink, '.') || $allLink == '/'
-                        || $allLink == '#') || stristr($allLink,'>') || stristr($allLink,'<')
-                    || stristr($allLink,'"') || stristr($allLink,'\'') )   {
+                if ( stristr($allLink, 'http://')
+                    || stristr($allLink, 'https://')
+                    || stristr($allLink, '.')
+                    || strlen($allLink) < 2
+                    || stristr($allLink,'>')
+                    || stristr($allLink,'<')
+                    || stristr($allLink,'"')
+                    || stristr($allLink,'\'')
+                ) {
                     continue;
                 }
                 $values[] = $allLink;
             } else {
-                if (substr($fullPath,-4) == 'html') {
+                if ( substr($allLink,-4) == 'html' && !stristr($allLink, 'http://') && !stristr($allLink, 'https://') ) {
                     $values[] = $allLink;
                 }
             }
         }
-        var_dump($values);
+        $values[] = $this->mainPageLink;
+        return $values;
     }
 }
-$styles = new LinksFromSite;
+
+class getCSSClassesFromPages
+    extends LinksFromSite
+{
+    protected $storageClasses = [];
+    public function getClassesFromPages($links)
+    {
+        foreach ($links as $vi) {
+            if ($vi !== $this->mainPageLink) {
+                $tempResource = file_get_contents($this->mainPageLink.$vi);
+            } else {
+                $tempResource = file_get_contents($this->mainPageLink);
+            }
+            preg_match_all($this->cssPattern, $tempResource,$tempArray);
+            foreach ($tempArray['class'] as $val) {
+                $val = trim($val);
+                // разбиваю классы, если в html указано 2 или 3 класса  - у меня есть такие вещи
+                if (strlen($val) <=1) {
+                    continue;
+                }
+                if(strpos($val, ' ')) {
+                    $temps  = explode(' ',$val);
+                    foreach ($temps as $vall) {
+                        if (strlen($val) <=1) {
+                            continue;
+                        }
+                        $this->storageClasses[] = $vall;
+                    }
+                }
+                else {
+                    $this->storageClasses[] = $val;
+                }
+            }
+        }
+        $this->storageClasses = array_unique($this->storageClasses);
+        return $this->storageClasses;
+    }
+}
+
+$styles = new getCSSClassesFromPages();
 //$cssPaths = $styles->getCSSClasses();
 //$jsPaths = $styles->getJSClasses();
 //$tst = $styles->getJSFromFile($jsPaths);
 //$new = $styles->cleanClasses($tst);
 
 $fl = $styles->getAllLinks();
+$classes = $styles->getClassesFromPages($fl);
+//var_dump($classes);
 
 
 
