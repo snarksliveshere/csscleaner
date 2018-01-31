@@ -1,13 +1,14 @@
 <?php
-
+ini_set('max_execution_time', 900000);
+// надо перебить это на генератор, чтобы память не ел
 class CSSConfig
 {
-    protected $friendlyUrl = true;
+    protected $urlWithoutHTML = true;
     protected $customPath = __DIR__.'/assets/template/';
     protected $jsFolder = 'js';
     protected $cssFolder = 'css2';
+    protected $mainPageLink = 'http://demo4.ru/';
 }
-
 class CleanStyle
     extends CSSConfig
 {
@@ -44,7 +45,6 @@ class CleanStyle
         // Закрываем директорию
         closedir($dir);
     }
-
     /**
      * @param $path
      * @return array
@@ -55,7 +55,6 @@ class CleanStyle
         self::getAllClasses($dirname, 'css');
         return self::$cssClasses;
     }
-
     /**
      * @param $path
      * @return array
@@ -67,7 +66,6 @@ class CleanStyle
         return self::$jsClasses;
     }
 }
-
 /**
  * looking for css classes in files with RegExp
  * Class ClassesRegular
@@ -100,7 +98,6 @@ class ClassesRegular
      * @var string
      */
     protected $jsPattern4 = '\$\((\s|\"|\')(.+)(\s|\"|\')\).on\((\s|\"|\')(.+?)(\'|\"),(\s|\'|\")(?P<selector4>.+?)(\s|\'|\")';
-
     /**
      * @param $data
      * @return array
@@ -138,12 +135,9 @@ class ClassesRegular
         }
         return $this->dataClasses;
     }
-
     public function getCSSFromFile($data)
     {
-
     }
-
     public function cleanClasses($data)
     {
         $tempArray = [];
@@ -170,7 +164,6 @@ class ClassesRegular
 //                            array_push($tempArray, $tempum);
 //                        }
                         $tempArray[] = $tempum;
-
                     }
                 }
             } else {
@@ -187,9 +180,7 @@ class ClassesRegular
 //                        array_push($tempArray, $val);
 //                    }
                     $tempArray[] = $val;
-
                 }
-
             }
         }
         //return $tempArray;
@@ -215,15 +206,41 @@ class ClassesRegular
     }
 }
 
+class LinksFromSite
+    extends ClassesRegular
+{
+    protected $patternHref = '~href="(?<link>.+?)"~';
 
-$styles = new ClassesRegular();
-$cssPaths = $styles->getCSSClasses();
-$jsPaths = $styles->getJSClasses();
+    public function getAllLinks()
+    {
+        $resourceLink = file_get_contents($this->mainPageLink);
+        preg_match_all($this->patternHref, $resourceLink,$allLinks);
+        $values = [];
+        foreach ($allLinks['link'] as $allLink) {
+            if ($this->urlWithoutHTML) {
+                // проверяем в том числе и ошибки в коде
+                if ( (stristr($allLink, 'http://') || stristr($allLink, '.') || $allLink == '/'
+                        || $allLink == '#') || stristr($allLink,'>') || stristr($allLink,'<')
+                    || stristr($allLink,'"') || stristr($allLink,'\'') )   {
+                    continue;
+                }
+                $values[] = $allLink;
+            } else {
+                if (substr($fullPath,-4) == 'html') {
+                    $values[] = $allLink;
+                }
+            }
+        }
+        var_dump($values);
+    }
+}
+$styles = new LinksFromSite;
+//$cssPaths = $styles->getCSSClasses();
+//$jsPaths = $styles->getJSClasses();
+//$tst = $styles->getJSFromFile($jsPaths);
+//$new = $styles->cleanClasses($tst);
 
-
-$tst = $styles->getJSFromFile($jsPaths);
-
-$new = $styles->cleanClasses($tst);
+$fl = $styles->getAllLinks();
 
 
 
