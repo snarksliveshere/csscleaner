@@ -290,22 +290,26 @@ class getCSSClassesFromPages
     public function getAllClasses()
     {
         $this->allClasses = array_merge($this->allCSSClasses,$this->allJSClasses);
-        $this->allClasses = array_unique($this->allCSSClasses,$this->allJSClasses);
-        $this->allClasses = array_filter($this->allClasses);
+        $this->allClasses = array_unique($this->allClasses);
+        $this->allClasses = array_values($this->allClasses);
         return $this->allClasses;
     }
 }
 
 $styles = new getCSSClassesFromPages();
-$cssPaths = $styles->getCSSClasses();
-$jsPaths = $styles->getJSClasses();
-$tst = $styles->getJSFromFile($jsPaths);
-$new = $styles->cleanClasses($tst);
-$fl = $styles->getAllLinks();
-$classes = $styles->getClassesFromPages($fl);
-
-$res = $styles->getAllClasses();
-
-
+//$cssPaths = $styles->getCSSClasses();
+//$jsPaths = $styles->getJSClasses();
+//$tst = $styles->getJSFromFile($jsPaths);
+//$new = $styles->cleanClasses($tst);
+//$fl = $styles->getAllLinks();
+//$classes = $styles->getClassesFromPages($fl);
+//
+//$res = $styles->getAllClasses();
+//foreach ($res as $re) {
+//    $re = $re."\n";
+//    file_put_contents('array.txt',$re,FILE_APPEND);
+//}
+$result = file('array.txt');
+var_dump($result);
 
 
