@@ -8,17 +8,21 @@ class CSSConfig
     protected $jsFolder = 'js';
     protected $cssFolder = 'css2';
     protected $mainPageLink = 'http://demo4.ru/';
+    protected $resultCSS = 'result.css';
 }
 class CleanStyle
     extends CSSConfig
 {
-    protected static $jsClasses = [];
-    protected static $cssClasses = [];
+    protected static $jsClassesPath= [];
+    protected static $cssClassesPath = [];
+    protected $allJSClasses = [];
+    protected $allCSSClasses = [];
+    protected $allClasses = [];
     /**
      * @param $dirname
      * @param $ext
      */
-    protected static function getAllClasses($dirname, $ext)
+    protected static function getAllClassesPath($dirname, $ext)
     {
         $dir = opendir($dirname);
         while (($file = readdir($dir)) !== false)
@@ -31,14 +35,14 @@ class CleanStyle
                 if(is_file($fullPath)
                     && strpos($fullPath,'.'.$ext)) {
                     if(substr($fullPath,-2) == 'js') {
-                        self::$jsClasses[] =$fullPath;
+                        self::$jsClassesPath[] =$fullPath;
                     } elseif (substr($fullPath,-3) == 'css') {
-                        self::$cssClasses[] =$fullPath;
+                        self::$cssClassesPath[] =$fullPath;
                     }
                 }
                 // Если перед нами директория, вызываем рекурсивно
                 if(is_dir($fullPath)) {
-                    self::getAllClasses($fullPath,$ext);
+                    self::getAllClassesPath($fullPath,$ext);
                 }
             }
         }
@@ -52,8 +56,8 @@ class CleanStyle
     public function getCSSClasses()
     {
         $dirname = $this->customPath.$this->cssFolder;
-        self::getAllClasses($dirname, 'css');
-        return self::$cssClasses;
+        self::getAllClassesPath($dirname, 'css');
+        return self::$cssClassesPath;
     }
     /**
      * @param $path
@@ -62,8 +66,8 @@ class CleanStyle
     public function getJSClasses()
     {
         $dirname = $this->customPath.$this->jsFolder;
-        self::getAllClasses($dirname, 'js');
-        return self::$jsClasses;
+        self::getAllClassesPath($dirname, 'js');
+        return self::$jsClassesPath;
     }
 }
 /**
@@ -86,6 +90,7 @@ class ClassesRegular
     /**
      * @var string
      */
+    protected $classInCSSPattern= '~(?P<class>[^\}\{\*\\\/]*)\{(\n*.*\n)?[^\}\{]*\}~';
     protected $jsPattern1 = '\$\((\'|\")(?P<selector1>\..+?)(\'|\")\)';
     /**
      * @var string
@@ -200,7 +205,8 @@ class ClassesRegular
             }
         }
         $nextArr = array_unique($nextArr);
-        return $nextArr;
+        $this->allJSClasses = $nextArr;
+        return $this->allJSClasses;
     }
 }
 
@@ -277,19 +283,29 @@ class getCSSClassesFromPages
             }
         }
         $this->storageClasses = array_unique($this->storageClasses);
-        return $this->storageClasses;
+        $this->allCSSClasses = $this->storageClasses;
+        return $this->allCSSClasses;
+    }
+
+    public function getAllClasses()
+    {
+        $this->allClasses = array_merge($this->allCSSClasses,$this->allJSClasses);
+        $this->allClasses = array_unique($this->allCSSClasses,$this->allJSClasses);
+        $this->allClasses = array_filter($this->allClasses);
+        return $this->allClasses;
     }
 }
 
 $styles = new getCSSClassesFromPages();
-//$cssPaths = $styles->getCSSClasses();
-//$jsPaths = $styles->getJSClasses();
-//$tst = $styles->getJSFromFile($jsPaths);
-//$new = $styles->cleanClasses($tst);
-
+$cssPaths = $styles->getCSSClasses();
+$jsPaths = $styles->getJSClasses();
+$tst = $styles->getJSFromFile($jsPaths);
+$new = $styles->cleanClasses($tst);
 $fl = $styles->getAllLinks();
 $classes = $styles->getClassesFromPages($fl);
-//var_dump($classes);
+
+$res = $styles->getAllClasses();
+
 
 
 
