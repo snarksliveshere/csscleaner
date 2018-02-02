@@ -9,6 +9,7 @@ class CSSConfig
     protected $cssFolder = 'css2';
     protected $mainPageLink = 'http://demo4.ru/';
     protected $resultCSS = 'result.css';
+    protected $counter = 0;
 }
 class CleanStyle
     extends CSSConfig
@@ -249,7 +250,7 @@ class LinksFromSite
     }
 }
 
-class getCSSClassesFromPages
+class CSSClassesFromPages
     extends LinksFromSite
 {
     protected $storageClasses = [];
@@ -296,9 +297,88 @@ class getCSSClassesFromPages
     }
 }
 
-$styles = new getCSSClassesFromPages();
-//$cssPaths = $styles->getCSSClasses();
-//$jsPaths = $styles->getJSClasses();
+class CSSWalk
+    extends CSSClassesFromPages
+{
+    public function getCSS($result_class)
+    {
+
+        foreach (self::$cssClassesPath as $ki_css => $item) {
+            $end_css = 'temp_'.$ki_css.'.css';
+            $csss = file_get_contents($item);
+            preg_match_all($this->classInCSSPattern, $csss, $csss_arr, PREG_OFFSET_CAPTURE);
+            $use_class = [];
+            $class_arrs = [];
+            foreach ($result_class as $html)
+            {
+                $st_pat = '~\b'.$html.'\b~';
+                foreach ($csss_arr['class'] as $val)
+                {
+                    if(!strpos($val[0], '#'))
+                    {
+                        if(!in_array($val[0], $class_arrs))
+                        {
+                            $class_arrs[]= $val[0];
+                        }
+
+                    }
+                    if(preg_match($st_pat, $val[0]))
+                    {
+                        $use_class[] = $val[0];
+                    }
+                }
+            }
+            $css_val_arr = array_diff($class_arrs,$use_class);
+
+            foreach ($class_arrs as $ki => $val_arr)
+            {
+                if(in_array($val_arr,$css_val_arr) && strpos($val_arr, '.'))
+                {
+                    if(file_exists($end_css))
+                    {
+                        $pat = '~'.$val_arr.'~';
+                        $fil = file_get_contents($end_css);
+                        preg_match($pat, $fil, $new_csss_arr, PREG_OFFSET_CAPTURE);
+                        if(isset($new_csss_arr[0]))
+                        {
+                            $num = $new_csss_arr[0][1];
+                            $last = strpos($fil,'}',$num);
+                            $lng = $last - $num;
+                            $fil = substr_replace($fil,'',$num,$lng+1);
+                            file_put_contents($end_css, $fil);
+                        }
+                    }
+                    else
+                    {
+                        $fil = file_get_contents($item);
+                        $num = $csss_arr['class'][$ki][1];
+                        $last = strpos($fil,'}',$num);
+                        $lng = $last - $num;
+                        $fil = substr_replace($fil,'',$num ,$lng+1);
+                        file_put_contents($end_css, $fil);
+                    }
+                }
+            }
+            $this->counter++;
+        }
+
+    }
+
+    public function mergeCSS()
+    {
+        for($i=0;$i<$this->counter;$i++)
+        {
+            $file = 'temp_'.$i.'.css';
+            $get_file = file_get_contents($file);
+            file_put_contents($this->resultCSS,$get_file,FILE_APPEND);
+            unlink($file);
+        }
+    }
+}
+
+$styles = new CSSWalk();
+$cssPaths = $styles->getCSSClasses();
+$jsPaths = $styles->getJSClasses();
 //$tst = $styles->getJSFromFile($jsPaths);
 //$new = $styles->cleanClasses($tst);
 //$fl = $styles->getAllLinks();
@@ -310,6 +390,10 @@ $styles = new getCSSClassesFromPages();
 //    file_put_contents('array.txt',$re,FILE_APPEND);
 //}
 $result = file('array.txt');
-var_dump($result);
+
+$res_c = $styles->getCSS($result);
+$styles->mergeCSS();
+
+
 
 
