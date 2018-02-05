@@ -14,7 +14,13 @@ class CSSConfig
 class CleanStyle
     extends CSSConfig
 {
+    /**
+     * @var array
+     */
     protected static $jsClassesPath= [];
+    /**
+     * @var array
+     */
     protected static $cssClassesPath = [];
     protected $allJSClasses = [];
     protected $allCSSClasses = [];
@@ -375,10 +381,44 @@ class CSSWalk
         }
     }
 }
+class CSSStart
+    extends CSSWalk
+{
+    public function __construct()
+    {
+        $this->getCSSClasses();
+        $this->getJSClasses();
+        $jsClasses = $this->getJSFromFile(self::$jsClassesPath);
+        $this->cleanClasses($jsClasses);
+        $allLinks = $this->getAllLinks();
+        $cssClasses = $this->getClassesFromPages($allLinks);
+        $res = $this->getAllClasses();
+        foreach ($res as $re) {
+            $re = $re."\n";
+            file_put_contents('array_orig2.txt',$re,FILE_APPEND);
+        }
 
-$styles = new CSSWalk();
-$cssPaths = $styles->getCSSClasses();
-$jsPaths = $styles->getJSClasses();
+        $result = file('array_orig2.txt',FILE_IGNORE_NEW_LINES);
+        var_dump($result);
+//
+//        $this->getCSS($result);
+//        $this->mergeCSS();
+
+    }
+}
+
+//*/
+//protected static $jsClassesPath= [];
+///**
+// * @var array
+// */
+//protected static $cssClassesPath = [];
+
+$styles = new CSSStart();
+
+//die;
+//$cssPaths = $styles->getCSSClasses();
+//$jsPaths = $styles->getJSClasses();
 //$tst = $styles->getJSFromFile($jsPaths);
 //$new = $styles->cleanClasses($tst);
 //$fl = $styles->getAllLinks();
@@ -389,10 +429,10 @@ $jsPaths = $styles->getJSClasses();
 //    $re = $re."\n";
 //    file_put_contents('array.txt',$re,FILE_APPEND);
 //}
-$result = file('array.txt');
-
-$res_c = $styles->getCSS($result);
-$styles->mergeCSS();
+//$result = file('array.txt');
+//
+//$res_c = $styles->getCSS($result);
+//$styles->mergeCSS();
 
 
 
