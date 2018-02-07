@@ -1,6 +1,8 @@
 <?php
 ini_set('max_execution_time', 900000);
-// надо перебить это на генератор, чтобы память не ел
+// TODO надо перебить это на генератор, чтобы память не ел
+// убрать return
+// поставить в статик разбиение по пробелу
 class CSSConfig
 {
     protected $urlWithoutHTML = true;
@@ -291,7 +293,6 @@ class CSSClassesFromPages
         }
         $this->storageClasses = array_unique($this->storageClasses);
         $this->allCSSClasses = $this->storageClasses;
-        return $this->allCSSClasses;
     }
 
     public function getAllClasses()
@@ -299,7 +300,6 @@ class CSSClassesFromPages
         $this->allClasses = array_merge($this->allCSSClasses,$this->allJSClasses);
         $this->allClasses = array_unique($this->allClasses);
         $this->allClasses = array_values($this->allClasses);
-        return $this->allClasses;
     }
 }
 
@@ -335,34 +335,32 @@ class CSSWalk
                 }
             }
             $css_val_arr = array_diff($class_arrs,$use_class);
-
+            /**
+             * сейчас будем вырезать
+             */
+            // TODO там обертывается в регулярку и аттрибуты будут неправильно интерпретироваться []
             foreach ($class_arrs as $ki => $val_arr)
             {
                 if(in_array($val_arr,$css_val_arr) && strpos($val_arr, '.'))
                 {
-                    if(file_exists($end_css))
-                    {
-                        $pat = '~'.$val_arr.'~';
+
+                    $pat = '~\Q'.$val_arr.'\E~';
+
+                    if (file_exists($end_css)) {
                         $fil = file_get_contents($end_css);
-                        preg_match($pat, $fil, $new_csss_arr, PREG_OFFSET_CAPTURE);
-                        if(isset($new_csss_arr[0]))
-                        {
-                            $num = $new_csss_arr[0][1];
-                            $last = strpos($fil,'}',$num);
-                            $lng = $last - $num;
-                            $fil = substr_replace($fil,'',$num,$lng+1);
-                            file_put_contents($end_css, $fil);
-                        }
-                    }
-                    else
-                    {
+                    } else {
                         $fil = file_get_contents($item);
-                        $num = $csss_arr['class'][$ki][1];
+                    }
+                    preg_match($pat, $fil, $new_csss_arr, PREG_OFFSET_CAPTURE);
+                    if(isset($new_csss_arr[0]))
+                    {
+                        $num = $new_csss_arr[0][1];
                         $last = strpos($fil,'}',$num);
                         $lng = $last - $num;
-                        $fil = substr_replace($fil,'',$num ,$lng+1);
+                        $fil = substr_replace($fil,'',$num,$lng+1);
                         file_put_contents($end_css, $fil);
                     }
+
                 }
             }
             $this->counter++;
@@ -393,26 +391,23 @@ class CSSStart
         $allLinks = $this->getAllLinks();
         $cssClasses = $this->getClassesFromPages($allLinks);
         $res = $this->getAllClasses();
-        foreach ($res as $re) {
-            $re = $re."\n";
-            file_put_contents('array_orig2.txt',$re,FILE_APPEND);
-        }
+//        foreach ($res as $re) {
+//            $re = $re."\n";
+//            file_put_contents('array_orig.txt',$re,FILE_APPEND);
+//        }
 
-        $result = file('array_orig2.txt',FILE_IGNORE_NEW_LINES);
-        var_dump($result);
+        //     $result = file('array_orig.txt',FILE_IGNORE_NEW_LINES);
+        //var_dump($result);
 //
-//        $this->getCSS($result);
-//        $this->mergeCSS();
+        // надо проверить только по меню
+        $result = ['menu'];
+
+        $this->getCSS($result);
+        $this->mergeCSS();
 
     }
 }
 
-//*/
-//protected static $jsClassesPath= [];
-///**
-// * @var array
-// */
-//protected static $cssClassesPath = [];
 
 $styles = new CSSStart();
 
