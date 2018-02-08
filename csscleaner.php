@@ -334,11 +334,12 @@ class CSSWalk
                     }
                 }
             }
-            $css_val_arr = array_diff($class_arrs,$use_class);
+            $css_val_arr = array_diff($class_arrs,$use_class,array(''));
             /**
              * сейчас будем вырезать
              */
             // TODO там обертывается в регулярку и аттрибуты будут неправильно интерпретироваться []
+            // .cat_in .ten у меня преобразовалось в .cat_in, который уже вырезался до этого
             foreach ($class_arrs as $ki => $val_arr)
             {
                 if(in_array($val_arr,$css_val_arr) && strpos($val_arr, '.'))
