@@ -1,6 +1,7 @@
 <?php
 ini_set('max_execution_time', 900000);
 // TODO надо перебить это на генератор, чтобы память не ел
+// TODO разобраться с комментариями
 // убрать return
 // поставить в статик разбиение по пробелу
 class CSSConfig
@@ -99,7 +100,7 @@ class ClassesRegular
     /**
      * @var string
      */
-    protected $classInCSSPattern= '~(?P<class>[^\}\{\*\\\/]*)\{(\n*.*\n)?[^\}\{]*\}~';
+    protected $classInCSSPattern= '~(?P<class>[^\}\{\\\/]*)\{(\n*.*\n)?[^\}\{]*\}~';
     protected $jsPattern1 = '\$\((\'|\")(?P<selector1>\..+?)(\'|\")\)';
     /**
      * @var string
@@ -324,27 +325,33 @@ class CSSWalk
                     {
                         if(!in_array($val[0], $class_arrs))
                         {
+//                            $class_arrs[]= trim($val[0]);
                             $class_arrs[]= $val[0];
                         }
 
                     }
                     if(preg_match($st_pat, $val[0]))
                     {
+//                        $use_class[] = trim($val[0]);
                         $use_class[] = $val[0];
                     }
                 }
             }
             $css_val_arr = array_diff($class_arrs,$use_class,array(''));
+
+
             /**
              * сейчас будем вырезать
              */
             // TODO там обертывается в регулярку и аттрибуты будут неправильно интерпретироваться []
             // .cat_in .ten у меня преобразовалось в .cat_in, который уже вырезался до этого
+            // TODO почему-то первый элемент не забирается .catalog_index *, .catalog_index_sect *
+            // TODO ? ::-webkit-input-placeholder{color: #c9c9c9;}
             foreach ($class_arrs as $ki => $val_arr)
             {
-                if(in_array($val_arr,$css_val_arr) && strpos($val_arr, '.'))
+                if(in_array($val_arr,$css_val_arr) && strstr($val_arr, '.'))
                 {
-
+                    echo $val_arr.'<hr>';
                     $pat = '~\Q'.$val_arr.'\E~';
 
                     if (file_exists($end_css)) {
