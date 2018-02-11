@@ -96,6 +96,10 @@ class ClassesRegular
      * @var string
      */
     /**
+     * clean css from caret
+     */
+    protected $cleanFromCaret = '/[\r\n]{2,}/i';
+    /**
      * css REGEXP
      * @var string
      */
@@ -388,6 +392,7 @@ class CSSWalk
         {
             $file = 'temp_'.$i.'.css';
             $get_file = file_get_contents($file);
+            $get_file = preg_replace($this->cleanFromCaret, "\r\n", $get_file);
             file_put_contents($this->resultCSS,$get_file,FILE_APPEND);
             unlink($file);
         }
@@ -410,14 +415,14 @@ class CSSStart
 //            file_put_contents('array_orig.txt',$re,FILE_APPEND);
 //        }
 
-        //     $result = file('array_orig.txt',FILE_IGNORE_NEW_LINES);
+        $result = file('array_orig.txt',FILE_IGNORE_NEW_LINES);
         //var_dump($result);
 //
         // надо проверить только по меню
-        $result = ['menu'];
+//        $result = ['menu'];
 
         $this->getCSS($result);
-//        $this->mergeCSS();
+        $this->mergeCSS();
 
     }
 }
