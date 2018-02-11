@@ -379,12 +379,12 @@ class CSSWalk
                                 $this->lngCounter++;
                                 $newStr = substr_replace($fil,'',$num,$this->lngCounter);
                             } else {
-                                // нужно считать, т.к. могут быть одинаковые классы с неодинаковым содержамым
-                                $num = $item_all[1] - $this->lngCounter;
-                                $last = strpos($newStr,'}',$num);
-                                $this->lngCounter = $last - $num;
+                                // нужно считать, т.к. могут быть одинаковые классы с неодинаковым содержамым, также потом пойдет, что на каждой итерации нужно отнимать *2,*3 etc - ненадежно
+                                preg_match($pat, $newStr,$matchPat,PREG_OFFSET_CAPTURE);
+                                $last = strpos($newStr,'}',$matchPat[0][1]);
+                                $this->lngCounter = $last - $matchPat[0][1];
                                 $this->lngCounter++;
-                                $newStr = substr_replace($newStr,'',$num,$this->lngCounter);
+                                $newStr = substr_replace($newStr,'',$matchPat[0][1],$this->lngCounter);
                             }
                         }
                         $this->lngCounter = 0;
