@@ -13,6 +13,9 @@ class CSSConfig
     protected $mainPageLink = 'http://demo4.ru/';
     protected $resultCSS = 'result.css';
     protected $counter = 0;
+    protected $needComment = true;
+    protected $minifyAllInOneString = false;
+    protected $minifyOneClassOneString = false;
 }
 class CleanStyle
     extends CSSConfig
@@ -307,6 +310,7 @@ class CSSClassesFromPages
 class CSSWalk
     extends CSSClassesFromPages
 {
+    protected $lngCounter = 0;
     public function getCSS($result_class)
     {
 
@@ -325,15 +329,15 @@ class CSSWalk
                     {
                         if(!in_array($val[0], $class_arrs))
                         {
-//                            $class_arrs[]= trim($val[0]);
-                            $class_arrs[]= $val[0];
+                            $class_arrs[]= trim($val[0]);
+//                            $class_arrs[]= $val[0];
                         }
 
                     }
                     if(preg_match($st_pat, $val[0]))
                     {
-//                        $use_class[] = trim($val[0]);
-                        $use_class[] = $val[0];
+                        $use_class[] = trim($val[0]);
+//                        $use_class[] = $val[0];
                     }
                 }
             }
@@ -346,27 +350,42 @@ class CSSWalk
             // TODO там обертывается в регулярку и аттрибуты будут неправильно интерпретироваться []
             // .cat_in .ten у меня преобразовалось в .cat_in, который уже вырезался до этого
             // TODO почему-то первый элемент не забирается .catalog_index *, .catalog_index_sect *
-            // TODO ? ::-webkit-input-placeholder{color: #c9c9c9;}
+            // TODO если попались в 1 файле 2 класса из числа тех, которые надо удалять
             foreach ($class_arrs as $ki => $val_arr)
             {
                 if(in_array($val_arr,$css_val_arr) && strstr($val_arr, '.'))
                 {
-                    echo $val_arr.'<hr>';
-                    $pat = '~\Q'.$val_arr.'\E~';
-
+                    $pat = '/\Q'.$val_arr.'\E(?=[\s,$]{0,}{)/';
                     if (file_exists($end_css)) {
                         $fil = file_get_contents($end_css);
                     } else {
                         $fil = file_get_contents($item);
                     }
-                    preg_match($pat, $fil, $new_csss_arr, PREG_OFFSET_CAPTURE);
-                    if(isset($new_csss_arr[0]))
+                    preg_match_all($pat, $fil, $new_csss_arr, PREG_OFFSET_CAPTURE);
+                    if(!isset($new_csss_arr[0][1]))
                     {
-                        $num = $new_csss_arr[0][1];
+                        $num = $new_csss_arr[0][0][1];
                         $last = strpos($fil,'}',$num);
                         $lng = $last - $num;
-                        $fil = substr_replace($fil,'',$num,$lng+1);
+                        $fil = substr_replace($fil,'',$num,$lng+2);
                         file_put_contents($end_css, $fil);
+                    }
+                    else {
+                        $newStr = '';
+                        foreach ($new_csss_arr[0] as $item_all) {
+                            if($this->lngCounter == 0) {
+                                $num = $item_all[1];
+                                $last = strpos($fil,'}',$num);
+                                $this->lngCounter = $last - $num;
+                                $this->lngCounter+2;
+                                $newStr = substr_replace($fil,'',$num,$this->lngCounter);
+                            } else {
+                                $num = $item_all[1] - $this->lngCounter;
+                                $newStr = substr_replace($newStr,'',$num,$this->lngCounter);
+                            }
+                        }
+                        $this->lngCounter = 0;
+                        file_put_contents($end_css, $newStr);
                     }
 
                 }
@@ -411,7 +430,7 @@ class CSSStart
         $result = ['menu'];
 
         $this->getCSS($result);
-        $this->mergeCSS();
+//        $this->mergeCSS();
 
     }
 }
