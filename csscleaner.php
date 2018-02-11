@@ -349,13 +349,12 @@ class CSSWalk
              */
             // TODO там обертывается в регулярку и аттрибуты будут неправильно интерпретироваться []
             // .cat_in .ten у меня преобразовалось в .cat_in, который уже вырезался до этого
-            // TODO почему-то первый элемент не забирается .catalog_index *, .catalog_index_sect *
             // TODO если попались в 1 файле 2 класса из числа тех, которые надо удалять
             foreach ($class_arrs as $ki => $val_arr)
             {
                 if(in_array($val_arr,$css_val_arr) && strstr($val_arr, '.'))
                 {
-                    $pat = '/\Q'.$val_arr.'\E(?=[\s,$]{0,}{)/';
+                    $pat = '/\Q'.$val_arr.'\E(?=[\s,\z]{0,}{)/u';
                     if (file_exists($end_css)) {
                         $fil = file_get_contents($end_css);
                     } else {
@@ -367,7 +366,7 @@ class CSSWalk
                         $num = $new_csss_arr[0][0][1];
                         $last = strpos($fil,'}',$num);
                         $lng = $last - $num;
-                        $fil = substr_replace($fil,'',$num,$lng+2);
+                        $fil = substr_replace($fil,'',$num,$lng+1);
                         file_put_contents($end_css, $fil);
                     }
                     else {
@@ -377,10 +376,14 @@ class CSSWalk
                                 $num = $item_all[1];
                                 $last = strpos($fil,'}',$num);
                                 $this->lngCounter = $last - $num;
-                                $this->lngCounter+2;
+                                $this->lngCounter++;
                                 $newStr = substr_replace($fil,'',$num,$this->lngCounter);
                             } else {
+                                // нужно считать, т.к. могут быть одинаковые классы с неодинаковым содержамым
                                 $num = $item_all[1] - $this->lngCounter;
+                                $last = strpos($newStr,'}',$num);
+                                $this->lngCounter = $last - $num;
+                                $this->lngCounter++;
                                 $newStr = substr_replace($newStr,'',$num,$this->lngCounter);
                             }
                         }
