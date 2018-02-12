@@ -17,7 +17,7 @@ class CSSConfig
      * удалять ли комментарии
      * @var bool
      */
-    protected $needComment = true;
+    protected $cleanComments = false;
     /**
      * минимизируем в 1 строку
      * @var bool
@@ -27,7 +27,7 @@ class CSSConfig
      * 1 класс 1 строка
      * @var bool
      */
-    protected $minifyOneClassOneString = false;
+    protected $minifyOneClassOneString = true;
 }
 class CleanStyle
     extends CSSConfig
@@ -110,24 +110,24 @@ class ClassesRegular
     /**
      * clean css from caret
      */
-    protected $cleanFromCarriage = '/[\r\n]{2,}/i';
+    protected $cleanFromCarriagePattern = '/[\r\n]{2,}/i';
 
     /**
      * minify alla in one string - 2 preg
      * @var string
      */
-    protected $minifyAllInOneStringFirst = "/([\r\n]{1,})|(\s*?(?={))/i";
-    protected $minifyAllInOneStringSecond = '/(?<=\:)\s*?/';
+    protected $minifyAllInOneStringFirstPattern = "/([\r\n]{1,})|(\s*?(?={))/i";
+    protected $minifyAllInOneStringSecondPattern = '/(?<=\:)\s*?/';
     /**
      * 1 string 1 class
      * @var string
      */
-    protected $oneClassOneString = "/(?<!})\n/";
+    protected $oneClassOneStringPattern = "/(?<!})\n/";
     /**
      * clean comments
      * @var string
      */
-    protected $cleanComments = '!/\*.*?\*/!s';
+    protected $cleanCommentsPattern = '!/\*.*?\*/!s';
     /**
      * css REGEXP
      * @var string
@@ -421,7 +421,17 @@ class CSSWalk
         {
             $file = 'temp_'.$i.'.css';
             $get_file = file_get_contents($file);
-            $get_file = preg_replace($this->cleanFromCarriage, "\r\n", $get_file);
+            if ($this->cleanComments) {
+                $get_file = preg_replace($this->cleanCommentsPattern, '', $get_file);
+            }
+            if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
+                $get_file = preg_replace($this->minifyAllInOneStringFirstPattern, '', $get_file);
+                $get_file = preg_replace($this->minifyAllInOneStringSecondPattern, '', $get_file);
+            }
+            if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
+                $get_file = preg_replace($this->oneClassOneStringPattern, '', $get_file);
+            }
+            $get_file = preg_replace($this->cleanFromCarriagePattern, "\r\n", $get_file);
             file_put_contents($this->resultCSS,$get_file,FILE_APPEND);
             unlink($file);
         }
@@ -444,7 +454,7 @@ class CSSStart
 
     }
 }
-//$styles = new CSSStart();
+$styles = new CSSStart();
 
 
 
