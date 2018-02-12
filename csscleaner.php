@@ -408,20 +408,20 @@ class CSSStart
         $jsClasses = $this->getJSFromFile(self::$jsClassesPath);
         $this->cleanClasses($jsClasses);
         $allLinks = $this->getAllLinks();
-        $cssClasses = $this->getClassesFromPages($allLinks);
-        $res = $this->getAllClasses();
-//        foreach ($res as $re) {
+        $this->getClassesFromPages($allLinks);
+        $this->getAllClasses();
+//        foreach ($this->allClasses as $re) {
 //            $re = $re."\n";
-//            file_put_contents('array_orig.txt',$re,FILE_APPEND);
+//            file_put_contents('array_orig2.txt',$re,FILE_APPEND);
 //        }
-
-        $result = file('array_orig.txt',FILE_IGNORE_NEW_LINES);
+//
+//        $result = file('array_orig2.txt',FILE_IGNORE_NEW_LINES);
         //var_dump($result);
 //
         // надо проверить только по меню
 //        $result = ['menu'];
 
-        $this->getCSS($result);
+        $this->getCSS($this->allClasses);
         $this->mergeCSS();
 
     }
