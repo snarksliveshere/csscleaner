@@ -410,43 +410,12 @@ class CSSStart
         $allLinks = $this->getAllLinks();
         $this->getClassesFromPages($allLinks);
         $this->getAllClasses();
-//        foreach ($this->allClasses as $re) {
-//            $re = $re."\n";
-//            file_put_contents('array_orig2.txt',$re,FILE_APPEND);
-//        }
-//
-//        $result = file('array_orig2.txt',FILE_IGNORE_NEW_LINES);
-        //var_dump($result);
-//
-        // надо проверить только по меню
-//        $result = ['menu'];
-
         $this->getCSS($this->allClasses);
         $this->mergeCSS();
 
     }
 }
-
-
-$styles = new CSSStart();
-
-//die;
-//$cssPaths = $styles->getCSSClasses();
-//$jsPaths = $styles->getJSClasses();
-//$tst = $styles->getJSFromFile($jsPaths);
-//$new = $styles->cleanClasses($tst);
-//$fl = $styles->getAllLinks();
-//$classes = $styles->getClassesFromPages($fl);
-//
-//$res = $styles->getAllClasses();
-//foreach ($res as $re) {
-//    $re = $re."\n";
-//    file_put_contents('array.txt',$re,FILE_APPEND);
-//}
-//$result = file('array.txt');
-//
-//$res_c = $styles->getCSS($result);
-//$styles->mergeCSS();
+//$styles = new CSSStart();
 
 
 
