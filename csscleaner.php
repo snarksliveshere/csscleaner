@@ -13,8 +13,20 @@ class CSSConfig
     protected $mainPageLink = 'http://demo4.ru/';
     protected $resultCSS = 'result.css';
     protected $counter = 0;
+    /**
+     * удалять ли комментарии
+     * @var bool
+     */
     protected $needComment = true;
+    /**
+     * минимизируем в 1 строку
+     * @var bool
+     */
     protected $minifyAllInOneString = false;
+    /**
+     * 1 класс 1 строка
+     * @var bool
+     */
     protected $minifyOneClassOneString = false;
 }
 class CleanStyle
@@ -98,7 +110,24 @@ class ClassesRegular
     /**
      * clean css from caret
      */
-    protected $cleanFromCaret = '/[\r\n]{2,}/i';
+    protected $cleanFromCarriage = '/[\r\n]{2,}/i';
+
+    /**
+     * minify alla in one string - 2 preg
+     * @var string
+     */
+    protected $minifyAllInOneStringFirst = "/([\r\n]{1,})|(\s*?(?={))/i";
+    protected $minifyAllInOneStringSecond = '/(?<=\:)\s*?/';
+    /**
+     * 1 string 1 class
+     * @var string
+     */
+    protected $oneClassOneString = "/(?<!})\n/";
+    /**
+     * clean comments
+     * @var string
+     */
+    protected $cleanComments = '!/\*.*?\*/!s';
     /**
      * css REGEXP
      * @var string
@@ -392,7 +421,7 @@ class CSSWalk
         {
             $file = 'temp_'.$i.'.css';
             $get_file = file_get_contents($file);
-            $get_file = preg_replace($this->cleanFromCaret, "\r\n", $get_file);
+            $get_file = preg_replace($this->cleanFromCarriage, "\r\n", $get_file);
             file_put_contents($this->resultCSS,$get_file,FILE_APPEND);
             unlink($file);
         }
