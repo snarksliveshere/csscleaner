@@ -185,7 +185,6 @@ class ClassesRegular
                 }
             }
         }
-        return $this->dataClasses;
     }
     public function cleanClasses($data)
     {
@@ -260,7 +259,7 @@ class LinksFromSite
     extends ClassesRegular
 {
     protected $patternHref = '~href="(?<link>.+?)"~';
-
+    protected $linksFromPages = [];
     /**
      *
      */
@@ -283,15 +282,14 @@ class LinksFromSite
                 ) {
                     continue;
                 }
-                $values[] = $allLink;
+                $this->linksFromPages[] = $allLink;
             } else {
                 if ( substr($allLink,-4) == 'html' && !stristr($allLink, 'http://') && !stristr($allLink, 'https://') ) {
-                    $values[] = $allLink;
+                    $this->linksFromPages[] = $allLink;
                 }
             }
         }
-        $values[] = $this->mainPageLink;
-        return $values;
+        $this->linksFromPages[] = $this->mainPageLink;
     }
 }
 
@@ -444,10 +442,10 @@ class CSSStart
     {
         $this->getCSSClasses();
         $this->getJSClasses();
-        $jsClasses = $this->getJSFromFile(self::$jsClassesPath);
-        $this->cleanClasses($jsClasses);
-        $allLinks = $this->getAllLinks();
-        $this->getClassesFromPages($allLinks);
+        $this->getJSFromFile(self::$jsClassesPath);
+        $this->cleanClasses($this->dataClasses);
+        $this->getAllLinks();
+        $this->getClassesFromPages($this->linksFromPages);
         $this->getAllClasses();
         $this->getCSS($this->allClasses);
         $this->mergeCSS();
