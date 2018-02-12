@@ -1,9 +1,7 @@
 <?php
 ini_set('max_execution_time', 900000);
 // TODO надо перебить это на генератор, чтобы память не ел
-// TODO разобраться с комментариями
-// убрать return
-// поставить в статик разбиение по пробелу
+// TODO 1 класс 1 строка странно как-то
 class CSSConfig
 {
     protected $urlWithoutHTML = true;
@@ -117,12 +115,12 @@ class ClassesRegular
      * @var string
      */
     protected $minifyAllInOneStringFirstPattern = "/([\r\n]{1,})|(\s*?(?={))/i";
-    protected $minifyAllInOneStringSecondPattern = '/(?<=\:)\s*?/';
+    protected $minifyRemoveSpacesPattern = '/(?<=\:)\s*?/';
     /**
      * 1 string 1 class
      * @var string
      */
-    protected $oneClassOneStringPattern = "/(?<!})\n/";
+    protected $oneClassOneStringPattern = "/((?<!})((\\r\\n)|(\\n)|(\\r)))/";
     /**
      * clean comments
      * @var string
@@ -377,20 +375,11 @@ class CSSWalk
 //            $class_arrs = array_unique($class_arrs);
             $css_val_arr = array_diff($class_arrs,$use_class,array(''));
 
-
-            /**
-             * сейчас будем вырезать
-             */
-            // TODO там обертывается в регулярку и аттрибуты будут неправильно интерпретироваться []
-            // .cat_in .ten у меня преобразовалось в .cat_in, который уже вырезался до этого
-            // TODO если попались в 1 файле 2 класса из числа тех, которые надо удалять
             foreach ($class_arrs as $ki => $val_arr)
             {
                 if(in_array($val_arr,$css_val_arr) && strstr($val_arr, '.'))
                 {
                     $pat = '/\Q'.$val_arr.'\E(?=[\s,\z]{0,}{)/u';
-                    $patNextN = '/[\n]{2,}/g';
-//                    preg_replace("/[\r\n]{2,}/i", "\r\n", $text);
                     if (file_exists($end_css)) {
                         $fil = file_get_contents($end_css);
                     } else {
@@ -424,10 +413,11 @@ class CSSWalk
             }
             if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
                 $get_file = preg_replace($this->minifyAllInOneStringFirstPattern, '', $get_file);
-                $get_file = preg_replace($this->minifyAllInOneStringSecondPattern, '', $get_file);
+                $get_file = preg_replace($this->minifyRemoveSpacesPattern, '', $get_file);
             }
             if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
                 $get_file = preg_replace($this->oneClassOneStringPattern, '', $get_file);
+                $get_file = preg_replace($this->minifyRemoveSpacesPattern, '', $get_file);
             }
             $get_file = preg_replace($this->cleanFromCarriagePattern, "\r\n", $get_file);
             file_put_contents($this->resultCSS,$get_file,FILE_APPEND);
