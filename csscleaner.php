@@ -1,7 +1,7 @@
 <?php
 ini_set('max_execution_time', 900000);
 // TODO надо перебить это на генератор, чтобы память не ел
-// TODO 1 класс 1 строка странно как-то
+// TODO можно еще вот это добавить px){
 class CSSConfig
 {
     protected $urlWithoutHTML = true;
@@ -25,7 +25,7 @@ class CSSConfig
      * 1 класс 1 строка
      * @var bool
      */
-    protected $minifyOneClassOneString = true;
+    protected $minifyOneClassOneString = false;
 }
 class CleanStyle
     extends CSSConfig
@@ -38,6 +38,10 @@ class CleanStyle
      * @var array
      */
     protected static $cssClassesPath = [];
+    /**
+     * @var array
+     * @property $allJSClasses
+     */
     protected $allJSClasses = [];
     protected $allCSSClasses = [];
     protected $allClasses = [];
@@ -342,85 +346,67 @@ class CSSWalk
     protected $lngCounter = 0;
     public function getCSS($result_class)
     {
-
         foreach (self::$cssClassesPath as $ki_css => $item) {
-            $end_css = 'temp_'.$ki_css.'.css';
-            $csss = file_get_contents($item);
-            preg_match_all($this->classInCSSPattern, $csss, $csss_arr, PREG_OFFSET_CAPTURE);
-            $use_class = [];
-            $class_arrs = [];
-            foreach ($result_class as $html)
-            {
-//                $st_pat = '~\b'.$html.'\b~';
-                $st_pat = '/\.+\b'.$html.'\b/u';
-
-                foreach ($csss_arr['class'] as $val)
-                {
-                    if(!strpos($val[0], '#'))
-                    {
-                        if(!in_array($val[0], $class_arrs))
-                        {
-                            $class_arrs[]= trim($val[0]);
-//                            $class_arrs[]= $val[0];
+            $tempCss = 'temp_'.$ki_css.'.css';
+            $cssFile = file_get_contents($item);
+            preg_match_all($this->classInCSSPattern, $cssFile, $cssArray, PREG_OFFSET_CAPTURE);
+            $usedClasses = [];
+            $fullClasses = [];
+            foreach ($result_class as $html) {
+                $singleClassPattern = '/\.+\b'.$html.'\b/u';
+                foreach ($cssArray['class'] as $val) {
+                    if(!strpos($val[0], '#')) {
+                        if(!in_array($val[0], $fullClasses)) {
+                            $fullClasses[]= trim($val[0]);
                         }
-
                     }
-                    if(preg_match($st_pat, $val[0]))
-                    {
-                        $use_class[] = trim($val[0]);
-//                        $use_class[] = $val[0];
+                    if(preg_match($singleClassPattern, $val[0])) {
+                        $usedClasses[] = trim($val[0]);
                     }
                 }
             }
-//            $class_arrs = array_unique($class_arrs);
-            $css_val_arr = array_diff($class_arrs,$use_class,array(''));
-
-            foreach ($class_arrs as $ki => $val_arr)
-            {
-                if(in_array($val_arr,$css_val_arr) && strstr($val_arr, '.'))
-                {
-                    $pat = '/\Q'.$val_arr.'\E(?=[\s,\z]{0,}{)/u';
-                    if (file_exists($end_css)) {
-                        $fil = file_get_contents($end_css);
+            $notUsedClasses = array_diff($fullClasses,$usedClasses,array(''));
+            foreach ($fullClasses as $ki => $val_arr) {
+                if(in_array($val_arr,$notUsedClasses) && strstr($val_arr, '.')) {
+                    $searchClassPattern = '/\Q'.$val_arr.'\E(?=[\s,\z]{0,}{)/u';
+                    if (file_exists($tempCss)) {
+                        $tempCSSFileContent = file_get_contents($tempCss);
                     } else {
-                        $fil = file_get_contents($item);
+                        $tempCSSFileContent = file_get_contents($item);
                     }
-                    preg_match($pat, $fil, $new_csss_arr, PREG_OFFSET_CAPTURE);
-                    if(isset($new_csss_arr[0]))
+                    preg_match($searchClassPattern, $tempCSSFileContent, $findedClasses, PREG_OFFSET_CAPTURE);
+                    if(isset($findedClasses[0]))
                     {
-                        $num = $new_csss_arr[0][1];
-                        $last = strpos($fil,'}',$num);
+                        $num = $findedClasses[0][1];
+                        $last = strpos($tempCSSFileContent,'}',$num);
                         $lng = $last - $num;
-                        $fil = substr_replace($fil,'',$num,$lng+1);
-                        file_put_contents($end_css, $fil);
+                        $tempCSSFileContent = substr_replace($tempCSSFileContent,'',$num,$lng+1);
+                        file_put_contents($tempCss, $tempCSSFileContent);
                     }
 
                 }
             }
             $this->counter++;
         }
-
     }
-
     public function mergeCSS()
     {
-        for($i=0;$i<$this->counter;$i++)
-        {
+        for($i=0;$i<$this->counter;$i++) {
             $file = 'temp_'.$i.'.css';
-            $get_file = file_get_contents($file);
+            $tempFile = file_get_contents($file);
             if ($this->cleanComments) {
-                $get_file = preg_replace($this->cleanCommentsPattern, '', $get_file);
+                $tempFile = preg_replace($this->cleanCommentsPattern, '', $tempFile);
             }
             if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
-                $get_file = preg_replace($this->minifyAllInOneStringFirstPattern, '', $get_file);
-                $get_file = preg_replace($this->minifyRemoveSpacesPattern, '', $get_file);
+                $tempFile = preg_replace($this->minifyAllInOneStringFirstPattern, '', $tempFile);
+                $tempFile = preg_replace($this->minifyRemoveSpacesPattern, '', $tempFile);
             }
             if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
-                $get_file = preg_replace($this->oneClassOneStringPattern, '', $get_file);
-                $get_file = preg_replace($this->minifyRemoveSpacesPattern, '', $get_file);
+                $tempFile = preg_replace($this->oneClassOneStringPattern, '', $tempFile);
+                $tempFile = preg_replace($this->minifyRemoveSpacesPattern, '', $tempFile);
             }
-            $get_file = preg_replace($this->cleanFromCarriagePattern, "\r\n", $get_file);
-            file_put_contents($this->resultCSS,$get_file,FILE_APPEND);
+            $tempFile = preg_replace($this->cleanFromCarriagePattern, "\r\n", $tempFile);
+            file_put_contents($this->resultCSS,$tempFile,FILE_APPEND);
             unlink($file);
         }
     }
