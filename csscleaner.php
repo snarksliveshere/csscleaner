@@ -1,9 +1,6 @@
 <?php
 ini_set('max_execution_time', 900000);
 // TODO надо перебить это на генератор, чтобы память не ел
-// TODO разобраться с комментариями
-// убрать return
-// поставить в статик разбиение по пробелу
 class CSSConfig
 {
     protected $urlWithoutHTML = true;
@@ -13,8 +10,20 @@ class CSSConfig
     protected $mainPageLink = 'http://demo4.ru/';
     protected $resultCSS = 'result.css';
     protected $counter = 0;
-    protected $needComment = true;
+    /**
+     * удалять ли комментарии
+     * @var bool
+     */
+    protected $cleanComments = false;
+    /**
+     * минимизируем в 1 строку
+     * @var bool
+     */
     protected $minifyAllInOneString = false;
+    /**
+     * 1 класс 1 строка
+     * @var bool
+     */
     protected $minifyOneClassOneString = false;
 }
 class CleanStyle
@@ -28,6 +37,10 @@ class CleanStyle
      * @var array
      */
     protected static $cssClassesPath = [];
+    /**
+     * @var array
+     * @property $allJSClasses
+     */
     protected $allJSClasses = [];
     protected $allCSSClasses = [];
     protected $allClasses = [];
@@ -70,7 +83,6 @@ class CleanStyle
     {
         $dirname = $this->customPath.$this->cssFolder;
         self::getAllClassesPath($dirname, 'css');
-        return self::$cssClassesPath;
     }
     /**
      * @param $path
@@ -80,7 +92,6 @@ class CleanStyle
     {
         $dirname = $this->customPath.$this->jsFolder;
         self::getAllClassesPath($dirname, 'js');
-        return self::$jsClassesPath;
     }
 }
 /**
@@ -95,6 +106,27 @@ class ClassesRegular
     /**
      * @var string
      */
+    /**
+     * clean css from caret
+     */
+    protected $cleanFromCarriagePattern = '/[\r\n]{2,}/i';
+
+    /**
+     * minify alla in one string - 2 preg
+     * @var string
+     */
+    protected $minifyAllInOneStringFirstPattern = "/([\r\n]{1,})|(\s*?(?={))/i";
+    protected $minifyRemoveSpacesPattern = '/(?<=\:)\s*?/';
+    /**
+     * 1 string 1 class
+     * @var string
+     */
+    protected $oneClassOneStringPattern = "/((?<!})((\\r\\n)|(\\n)|(\\r)))/";
+    /**
+     * clean comments
+     * @var string
+     */
+    protected $cleanCommentsPattern = '!/\*.*?\*/!s';
     /**
      * css REGEXP
      * @var string
@@ -152,7 +184,6 @@ class ClassesRegular
                 }
             }
         }
-        return $this->dataClasses;
     }
     public function cleanClasses($data)
     {
@@ -163,43 +194,19 @@ class ClassesRegular
             if (empty($datum) || $datum == '.') {
                 continue;
             }
-            if(strpos($val, ' '))
-            {
+            if(strpos($val, ' ')) {
                 $temps  = explode(' ',$val);
-                foreach ($temps as $tempum)
-                {
-                    if(strlen($tempum)!=1)
-                    {
-//                        if(stripos($tempum,'.') === 0 )
-//                        {
-//                            $tempum = substr($tempum,1);
-//                            array_push($tempArray, $tempum);
-//                        }
-//                        else
-//                        {
-//                            array_push($tempArray, $tempum);
-//                        }
+                foreach ($temps as $tempum) {
+                    if(strlen($tempum)!=1) {
                         $tempArray[] = $tempum;
                     }
                 }
             } else {
-                if(strlen($val)!=1)
-                {
-//                    array_push($tempArray, $val);
-//                    if(stripos($val,'.') === 0  )
-//                    {
-//                        $val = substr($val,1);
-//                        array_push($tempArray, $val);
-//                    }
-//                    else
-//                    {
-//                        array_push($tempArray, $val);
-//                    }
+                if(strlen($val)!=1) {
                     $tempArray[] = $val;
                 }
             }
         }
-        //return $tempArray;
         $nextArr = [];
         foreach ($tempArray as $item) {
             if (!strstr($item, '.')) {
@@ -219,7 +226,6 @@ class ClassesRegular
         }
         $nextArr = array_unique($nextArr);
         $this->allJSClasses = $nextArr;
-        return $this->allJSClasses;
     }
 }
 
@@ -227,15 +233,12 @@ class LinksFromSite
     extends ClassesRegular
 {
     protected $patternHref = '~href="(?<link>.+?)"~';
+    protected $linksFromPages = [];
 
-    /**
-     *
-     */
     public function getAllLinks()
     {
         $resourceLink = file_get_contents($this->mainPageLink);
         preg_match_all($this->patternHref, $resourceLink,$allLinks);
-        $values = [];
         foreach ($allLinks['link'] as $allLink) {
             if ($this->urlWithoutHTML) {
                 // проверяем в том числе и ошибки в коде
@@ -250,15 +253,14 @@ class LinksFromSite
                 ) {
                     continue;
                 }
-                $values[] = $allLink;
+                $this->linksFromPages[] = $allLink;
             } else {
                 if ( substr($allLink,-4) == 'html' && !stristr($allLink, 'http://') && !stristr($allLink, 'https://') ) {
-                    $values[] = $allLink;
+                    $this->linksFromPages[] = $allLink;
                 }
             }
         }
-        $values[] = $this->mainPageLink;
-        return $values;
+        $this->linksFromPages[] = $this->mainPageLink;
     }
 }
 
@@ -313,98 +315,65 @@ class CSSWalk
     protected $lngCounter = 0;
     public function getCSS($result_class)
     {
-
         foreach (self::$cssClassesPath as $ki_css => $item) {
-            $end_css = 'temp_'.$ki_css.'.css';
-            $csss = file_get_contents($item);
-            preg_match_all($this->classInCSSPattern, $csss, $csss_arr, PREG_OFFSET_CAPTURE);
-            $use_class = [];
-            $class_arrs = [];
-            foreach ($result_class as $html)
-            {
-                $st_pat = '~\b'.$html.'\b~';
-                foreach ($csss_arr['class'] as $val)
-                {
-                    if(!strpos($val[0], '#'))
-                    {
-                        if(!in_array($val[0], $class_arrs))
-                        {
-                            $class_arrs[]= trim($val[0]);
-//                            $class_arrs[]= $val[0];
+            $tempCss = 'temp_'.$ki_css.'.css';
+            $cssFile = file_get_contents($item);
+            preg_match_all($this->classInCSSPattern, $cssFile, $cssArray, PREG_OFFSET_CAPTURE);
+            $usedClasses = [];
+            $fullClasses = [];
+            foreach ($result_class as $html) {
+                $singleClassPattern = '/\.+\b'.$html.'\b/u';
+                foreach ($cssArray['class'] as $val) {
+                    if(!strpos($val[0], '#')) {
+                        if(!in_array($val[0], $fullClasses)) {
+                            $fullClasses[]= trim($val[0]);
                         }
-
                     }
-                    if(preg_match($st_pat, $val[0]))
-                    {
-                        $use_class[] = trim($val[0]);
-//                        $use_class[] = $val[0];
+                    if(preg_match($singleClassPattern, $val[0])) {
+                        $usedClasses[] = trim($val[0]);
                     }
                 }
             }
-            $css_val_arr = array_diff($class_arrs,$use_class,array(''));
-
-
-            /**
-             * сейчас будем вырезать
-             */
-            // TODO там обертывается в регулярку и аттрибуты будут неправильно интерпретироваться []
-            // .cat_in .ten у меня преобразовалось в .cat_in, который уже вырезался до этого
-            // TODO если попались в 1 файле 2 класса из числа тех, которые надо удалять
-            foreach ($class_arrs as $ki => $val_arr)
-            {
-                if(in_array($val_arr,$css_val_arr) && strstr($val_arr, '.'))
-                {
-                    $pat = '/\Q'.$val_arr.'\E(?=[\s,\z]{0,}{)/u';
-                    if (file_exists($end_css)) {
-                        $fil = file_get_contents($end_css);
+            $notUsedClasses = array_diff($fullClasses,$usedClasses,array(''));
+            foreach ($fullClasses as $ki => $val_arr) {
+                if(in_array($val_arr,$notUsedClasses) && strstr($val_arr, '.')) {
+                    $searchClassPattern = '/\Q'.$val_arr.'\E(?=[\s,\z]{0,}{)/u';
+                    if (file_exists($tempCss)) {
+                        $tempCSSFileContent = file_get_contents($tempCss);
                     } else {
-                        $fil = file_get_contents($item);
+                        $tempCSSFileContent = file_get_contents($item);
                     }
-                    preg_match_all($pat, $fil, $new_csss_arr, PREG_OFFSET_CAPTURE);
-                    if(!isset($new_csss_arr[0][1]))
-                    {
-                        $num = $new_csss_arr[0][0][1];
-                        $last = strpos($fil,'}',$num);
+                    preg_match($searchClassPattern, $tempCSSFileContent, $findedClasses, PREG_OFFSET_CAPTURE);
+                    if(isset($findedClasses[0])) {
+                        $num = $findedClasses[0][1];
+                        $last = strpos($tempCSSFileContent,'}',$num);
                         $lng = $last - $num;
-                        $fil = substr_replace($fil,'',$num,$lng+1);
-                        file_put_contents($end_css, $fil);
+                        $tempCSSFileContent = substr_replace($tempCSSFileContent,'',$num,$lng+1);
+                        file_put_contents($tempCss, $tempCSSFileContent);
                     }
-                    else {
-                        $newStr = '';
-                        foreach ($new_csss_arr[0] as $item_all) {
-                            if($this->lngCounter == 0) {
-                                $num = $item_all[1];
-                                $last = strpos($fil,'}',$num);
-                                $this->lngCounter = $last - $num;
-                                $this->lngCounter++;
-                                $newStr = substr_replace($fil,'',$num,$this->lngCounter);
-                            } else {
-                                // нужно считать, т.к. могут быть одинаковые классы с неодинаковым содержамым
-                                $num = $item_all[1] - $this->lngCounter;
-                                $last = strpos($newStr,'}',$num);
-                                $this->lngCounter = $last - $num;
-                                $this->lngCounter++;
-                                $newStr = substr_replace($newStr,'',$num,$this->lngCounter);
-                            }
-                        }
-                        $this->lngCounter = 0;
-                        file_put_contents($end_css, $newStr);
-                    }
-
                 }
             }
             $this->counter++;
         }
-
     }
-
     public function mergeCSS()
     {
-        for($i=0;$i<$this->counter;$i++)
-        {
+        for($i=0;$i<$this->counter;$i++) {
             $file = 'temp_'.$i.'.css';
-            $get_file = file_get_contents($file);
-            file_put_contents($this->resultCSS,$get_file,FILE_APPEND);
+            $tempFile = file_get_contents($file);
+            if ($this->cleanComments) {
+                $tempFile = preg_replace($this->cleanCommentsPattern, '', $tempFile);
+            }
+            if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
+                $tempFile = preg_replace($this->minifyAllInOneStringFirstPattern, '', $tempFile);
+                $tempFile = preg_replace($this->minifyRemoveSpacesPattern, '', $tempFile);
+            }
+            if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
+                $tempFile = preg_replace($this->oneClassOneStringPattern, '', $tempFile);
+                $tempFile = preg_replace($this->minifyRemoveSpacesPattern, '', $tempFile);
+            }
+            $tempFile = preg_replace($this->cleanFromCarriagePattern, "\r\n", $tempFile);
+            file_put_contents($this->resultCSS,$tempFile,FILE_APPEND);
             unlink($file);
         }
     }
@@ -416,49 +385,14 @@ class CSSStart
     {
         $this->getCSSClasses();
         $this->getJSClasses();
-        $jsClasses = $this->getJSFromFile(self::$jsClassesPath);
-        $this->cleanClasses($jsClasses);
-        $allLinks = $this->getAllLinks();
-        $cssClasses = $this->getClassesFromPages($allLinks);
-        $res = $this->getAllClasses();
-//        foreach ($res as $re) {
-//            $re = $re."\n";
-//            file_put_contents('array_orig.txt',$re,FILE_APPEND);
-//        }
-
-        //     $result = file('array_orig.txt',FILE_IGNORE_NEW_LINES);
-        //var_dump($result);
-//
-        // надо проверить только по меню
-        $result = ['menu'];
-
-        $this->getCSS($result);
-//        $this->mergeCSS();
+        $this->getJSFromFile(self::$jsClassesPath);
+        $this->cleanClasses($this->dataClasses);
+        $this->getAllLinks();
+        $this->getClassesFromPages($this->linksFromPages);
+        $this->getAllClasses();
+        $this->getCSS($this->allClasses);
+        $this->mergeCSS();
 
     }
 }
-
-
 $styles = new CSSStart();
-
-//die;
-//$cssPaths = $styles->getCSSClasses();
-//$jsPaths = $styles->getJSClasses();
-//$tst = $styles->getJSFromFile($jsPaths);
-//$new = $styles->cleanClasses($tst);
-//$fl = $styles->getAllLinks();
-//$classes = $styles->getClassesFromPages($fl);
-//
-//$res = $styles->getAllClasses();
-//foreach ($res as $re) {
-//    $re = $re."\n";
-//    file_put_contents('array.txt',$re,FILE_APPEND);
-//}
-//$result = file('array.txt');
-//
-//$res_c = $styles->getCSS($result);
-//$styles->mergeCSS();
-
-
-
-
