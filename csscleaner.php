@@ -31,14 +31,14 @@ class CSSConfig
      * адрес главной страницы сайта
      * main page url
      */
-    protected $mainPageLink = 'http://demo4.ru/';
+    protected $mainPageLink = 'http://demo4.ru';
     /**
      * @var string
      * название файла, которые получится на выходе
      * name of the output file
      */
     protected $resultCSS = 'result.css';
-   /**
+    /**
      * удалять ли комментарии
      * is comments need to delete?
      * @var bool
@@ -214,6 +214,7 @@ class ClassesRegular
                     }
                 }
             }
+
         }
     }
     public function cleanClasses($data)
@@ -281,6 +282,9 @@ class LinksFromSite
                     || stristr($allLink,'<')
                     || stristr($allLink,'"')
                     || stristr($allLink,'\'')
+                    || stristr($allLink,'#')
+                    || stristr($allLink,':')
+                    || stristr($allLink,$this->mainPageLink)
                 ) {
                     continue;
                 }
@@ -302,8 +306,13 @@ class CSSClassesFromPages
     public function getClassesFromPages($links)
     {
         foreach ($links as $vi) {
-            if ($vi !== $this->mainPageLink) {
-                $tempResource = file_get_contents($this->mainPageLink.$vi);
+            if ( $vi !== $this->mainPageLink) {
+                if (strpos($vi,'/') !== 0) {
+                    $tempResource = file_get_contents($this->mainPageLink.'/'.$vi);
+                } else {
+                    $tempResource = file_get_contents($this->mainPageLink.$vi);
+                }
+
             } else {
                 $tempResource = file_get_contents($this->mainPageLink);
             }
@@ -345,7 +354,7 @@ class CSSWalk
 {
     protected $lngCounter = 0;
     protected $counter = 0;
-    public function getCSS($result_class)
+    public function getCSS($classesArray)
     {
         foreach (self::$cssClassesPath as $ki_css => $item) {
             $tempCss = 'temp_'.$ki_css.'.css';
@@ -353,7 +362,7 @@ class CSSWalk
             preg_match_all($this->classInCSSPattern, $cssFile, $cssArray, PREG_OFFSET_CAPTURE);
             $usedClasses = [];
             $fullClasses = [];
-            foreach ($result_class as $html) {
+            foreach ($classesArray as $html) {
                 $singleClassPattern = '/\.+\b'.$html.'\b/u';
                 foreach ($cssArray['class'] as $val) {
                     if(!strpos($val[0], '#')) {
@@ -392,21 +401,23 @@ class CSSWalk
     {
         for($i=0;$i<$this->counter;$i++) {
             $file = 'temp_'.$i.'.css';
-            $tempFile = file_get_contents($file);
-            if ($this->cleanComments) {
-                $tempFile = preg_replace($this->cleanCommentsPattern, '', $tempFile);
+            if (file_exists($file)) {
+                $tempFile = file_get_contents($file);
+                if ($this->cleanComments) {
+                    $tempFile = preg_replace($this->cleanCommentsPattern, '', $tempFile);
+                }
+                if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
+                    $tempFile = preg_replace($this->minifyAllInOneStringFirstPattern, '', $tempFile);
+                    $tempFile = preg_replace($this->minifyRemoveSpacesPattern, '', $tempFile);
+                }
+                if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
+                    $tempFile = preg_replace($this->oneClassOneStringPattern, '', $tempFile);
+                    $tempFile = preg_replace($this->minifyRemoveSpacesPattern, '', $tempFile);
+                }
+                $tempFile = preg_replace($this->cleanFromCarriagePattern, "\r\n", $tempFile);
+                file_put_contents($this->resultCSS,$tempFile,FILE_APPEND);
+                unlink($file);
             }
-            if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
-                $tempFile = preg_replace($this->minifyAllInOneStringFirstPattern, '', $tempFile);
-                $tempFile = preg_replace($this->minifyRemoveSpacesPattern, '', $tempFile);
-            }
-            if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
-                $tempFile = preg_replace($this->oneClassOneStringPattern, '', $tempFile);
-                $tempFile = preg_replace($this->minifyRemoveSpacesPattern, '', $tempFile);
-            }
-            $tempFile = preg_replace($this->cleanFromCarriagePattern, "\r\n", $tempFile);
-            file_put_contents($this->resultCSS,$tempFile,FILE_APPEND);
-            unlink($file);
         }
     }
 }
