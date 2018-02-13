@@ -1,7 +1,6 @@
 <?php
 ini_set('max_execution_time', 900000);
 // TODO надо перебить это на генератор, чтобы память не ел
-// TODO можно еще вот это добавить px){
 class CSSConfig
 {
     protected $urlWithoutHTML = true;
