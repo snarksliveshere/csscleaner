@@ -197,43 +197,19 @@ class ClassesRegular
             if (empty($datum) || $datum == '.') {
                 continue;
             }
-            if(strpos($val, ' '))
-            {
+            if(strpos($val, ' ')) {
                 $temps  = explode(' ',$val);
-                foreach ($temps as $tempum)
-                {
-                    if(strlen($tempum)!=1)
-                    {
-//                        if(stripos($tempum,'.') === 0 )
-//                        {
-//                            $tempum = substr($tempum,1);
-//                            array_push($tempArray, $tempum);
-//                        }
-//                        else
-//                        {
-//                            array_push($tempArray, $tempum);
-//                        }
+                foreach ($temps as $tempum) {
+                    if(strlen($tempum)!=1) {
                         $tempArray[] = $tempum;
                     }
                 }
             } else {
-                if(strlen($val)!=1)
-                {
-//                    array_push($tempArray, $val);
-//                    if(stripos($val,'.') === 0  )
-//                    {
-//                        $val = substr($val,1);
-//                        array_push($tempArray, $val);
-//                    }
-//                    else
-//                    {
-//                        array_push($tempArray, $val);
-//                    }
+                if(strlen($val)!=1) {
                     $tempArray[] = $val;
                 }
             }
         }
-        //return $tempArray;
         $nextArr = [];
         foreach ($tempArray as $item) {
             if (!strstr($item, '.')) {
@@ -253,7 +229,6 @@ class ClassesRegular
         }
         $nextArr = array_unique($nextArr);
         $this->allJSClasses = $nextArr;
-        return $this->allJSClasses;
     }
 }
 
@@ -262,14 +237,11 @@ class LinksFromSite
 {
     protected $patternHref = '~href="(?<link>.+?)"~';
     protected $linksFromPages = [];
-    /**
-     *
-     */
+
     public function getAllLinks()
     {
         $resourceLink = file_get_contents($this->mainPageLink);
         preg_match_all($this->patternHref, $resourceLink,$allLinks);
-        $values = [];
         foreach ($allLinks['link'] as $allLink) {
             if ($this->urlWithoutHTML) {
                 // проверяем в том числе и ошибки в коде
