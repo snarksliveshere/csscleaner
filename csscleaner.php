@@ -84,7 +84,6 @@ class CleanStyle
     {
         $dirname = $this->customPath.$this->cssFolder;
         self::getAllClassesPath($dirname, 'css');
-        return self::$cssClassesPath;
     }
     /**
      * @param $path
@@ -94,7 +93,6 @@ class CleanStyle
     {
         $dirname = $this->customPath.$this->jsFolder;
         self::getAllClassesPath($dirname, 'js');
-        return self::$jsClassesPath;
     }
 }
 /**
@@ -347,15 +345,13 @@ class CSSWalk
                         $tempCSSFileContent = file_get_contents($item);
                     }
                     preg_match($searchClassPattern, $tempCSSFileContent, $findedClasses, PREG_OFFSET_CAPTURE);
-                    if(isset($findedClasses[0]))
-                    {
+                    if(isset($findedClasses[0])) {
                         $num = $findedClasses[0][1];
                         $last = strpos($tempCSSFileContent,'}',$num);
                         $lng = $last - $num;
                         $tempCSSFileContent = substr_replace($tempCSSFileContent,'',$num,$lng+1);
                         file_put_contents($tempCss, $tempCSSFileContent);
                     }
-
                 }
             }
             $this->counter++;
@@ -401,7 +397,3 @@ class CSSStart
     }
 }
 $styles = new CSSStart();
-
-
-
-
