@@ -6,6 +6,9 @@ remove unused classes from css
 
 
 
+Опции находятся в class CSSConfig
+Options in class CSSConfig
+
  * есть ли .html у адреса
  * have .html in url ?
 
