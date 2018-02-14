@@ -316,6 +316,9 @@ class CSSClassesFromPages
             } else {
                 $tempResource = file_get_contents($this->mainPageLink);
             }
+            if (false === $tempResource) {
+                continue;
+            }
             preg_match_all($this->cssPattern, $tempResource,$tempArray);
             foreach ($tempArray['class'] as $val) {
                 $val = trim($val);
@@ -376,11 +379,12 @@ class CSSWalk
                 }
             }
             $notUsedClasses = array_diff($fullClasses,$usedClasses,array(''));
+            $putContents = '';
             foreach ($fullClasses as $ki => $val_arr) {
                 if(in_array($val_arr,$notUsedClasses) && strstr($val_arr, '.')) {
                     $searchClassPattern = '/\Q'.$val_arr.'\E(?=[\s,\z]{0,}{)/u';
-                    if (file_exists($tempCss)) {
-                        $tempCSSFileContent = file_get_contents($tempCss);
+                    if ($putContents) {
+                        $tempCSSFileContent = $putContents;
                     } else {
                         $tempCSSFileContent = file_get_contents($item);
                     }
@@ -390,10 +394,11 @@ class CSSWalk
                         $last = strpos($tempCSSFileContent,'}',$num);
                         $lng = $last - $num;
                         $tempCSSFileContent = substr_replace($tempCSSFileContent,'',$num,$lng+1);
-                        file_put_contents($tempCss, $tempCSSFileContent);
+                        $putContents = $tempCSSFileContent;
                     }
                 }
             }
+            file_put_contents($tempCss, $putContents);
             $this->counter++;
         }
     }
