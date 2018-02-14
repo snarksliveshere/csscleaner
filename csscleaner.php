@@ -357,50 +357,55 @@ class CSSWalk
 {
     protected $lngCounter = 0;
     protected $counter = 0;
-    public function getCSS($classesArray)
+    protected $allCssRaw = '';
+    protected $finalCleanCss = '';
+
+    public function allFileInOneString()
     {
         foreach (self::$cssClassesPath as $ki_css => $item) {
-            $tempCss = 'temp_'.$ki_css.'.css';
-            $cssFile = file_get_contents($item);
-            preg_match_all($this->classInCSSPattern, $cssFile, $cssArray, PREG_OFFSET_CAPTURE);
-            $usedClasses = [];
-            $fullClasses = [];
-            foreach ($classesArray as $html) {
-                $singleClassPattern = '/\.+\b'.$html.'\b/u';
-                foreach ($cssArray['class'] as $val) {
-                    if(!strpos($val[0], '#')) {
-                        if(!in_array($val[0], $fullClasses)) {
-                            $fullClasses[]= trim($val[0]);
-                        }
-                    }
-                    if(preg_match($singleClassPattern, $val[0])) {
-                        $usedClasses[] = trim($val[0]);
-                    }
-                }
-            }
-            $notUsedClasses = array_diff($fullClasses,$usedClasses,array(''));
-            $putContents = '';
-            foreach ($fullClasses as $ki => $val_arr) {
-                if(in_array($val_arr,$notUsedClasses) && strstr($val_arr, '.')) {
-                    $searchClassPattern = '/\Q'.$val_arr.'\E(?=[\s,\z]{0,}{)/u';
-                    if ($putContents) {
-                        $tempCSSFileContent = $putContents;
-                    } else {
-                        $tempCSSFileContent = file_get_contents($item);
-                    }
-                    preg_match($searchClassPattern, $tempCSSFileContent, $findedClasses, PREG_OFFSET_CAPTURE);
-                    if(isset($findedClasses[0])) {
-                        $num = $findedClasses[0][1];
-                        $last = strpos($tempCSSFileContent,'}',$num);
-                        $lng = $last - $num;
-                        $tempCSSFileContent = substr_replace($tempCSSFileContent,'',$num,$lng+1);
-                        $putContents = $tempCSSFileContent;
-                    }
-                }
-            }
-            file_put_contents($tempCss, $putContents);
-            $this->counter++;
+            $this->allCssRaw .= file_get_contents($item);
         }
+    }
+    public function getCSS($classesArray)
+    {
+        preg_match_all($this->classInCSSPattern, $this->allCssRaw, $cssArray, PREG_OFFSET_CAPTURE);
+        $usedClasses = [];
+        $fullClasses = [];
+        foreach ($classesArray as $html) {
+            $singleClassPattern = '/\.+\b'.$html.'\b/u';
+            foreach ($cssArray['class'] as $val) {
+                if(!strpos($val[0], '#')) {
+                    if(!in_array($val[0], $fullClasses)) {
+                        $fullClasses[]= trim($val[0]);
+                    }
+                }
+                if(preg_match($singleClassPattern, $val[0])) {
+                    $usedClasses[] = trim($val[0]);
+                }
+            }
+        }
+        $notUsedClasses = array_diff($fullClasses,$usedClasses,array(''));
+
+        foreach ($fullClasses as $ki => $val_arr) {
+            if(in_array($val_arr,$notUsedClasses) && strstr($val_arr, '.')) {
+                $searchClassPattern = '/\Q'.$val_arr.'\E(?=[\s,\z]{0,}{)/u';
+                if ($this->finalCleanCss) {
+                    $tempCSSFileContent = $this->finalCleanCss;
+                } else {
+                    $tempCSSFileContent = $this->allCssRaw;
+                }
+
+                preg_match($searchClassPattern, $tempCSSFileContent, $findedClasses, PREG_OFFSET_CAPTURE);
+                if(isset($findedClasses[0])) {
+                    $num = $findedClasses[0][1];
+                    $last = strpos($tempCSSFileContent,'}',$num);
+                    $lng = $last - $num;
+                    $tempCSSFileContent = substr_replace($tempCSSFileContent,'',$num,$lng+1);
+                    $this->finalCleanCss = $tempCSSFileContent;
+                }
+            }
+        }
+
     }
     public function mergeCSS()
     {
@@ -425,6 +430,25 @@ class CSSWalk
             }
         }
     }
+    public function afterActionCSS()
+    {
+        if ($this->finalCleanCss) {
+            if ($this->cleanComments) {
+                $this->finalCleanCss = preg_replace($this->cleanCommentsPattern, '', $this->finalCleanCss);
+            }
+            if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
+                $$this->finalCleanCss = preg_replace($this->minifyAllInOneStringFirstPattern, '', $this->finalCleanCss);
+                $this->finalCleanCss = preg_replace($this->minifyRemoveSpacesPattern, '', $this->finalCleanCss);
+            }
+            if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
+                $this->finalCleanCss = preg_replace($this->oneClassOneStringPattern, '', $this->finalCleanCss);
+                $this->finalCleanCss = preg_replace($this->minifyRemoveSpacesPattern, '', $this->finalCleanCss);
+            }
+            $this->finalCleanCss = preg_replace($this->cleanFromCarriagePattern, "\r\n", $this->finalCleanCss);
+            file_put_contents($this->resultCSS,$this->finalCleanCss);
+        }
+
+    }
 }
 class CSSStart
     extends CSSWalk
@@ -438,8 +462,9 @@ class CSSStart
         $this->getAllLinks();
         $this->getClassesFromPages($this->linksFromPages);
         $this->getAllClasses();
+        $this->allFileInOneString();
         $this->getCSS($this->allClasses);
-        $this->mergeCSS();
+        $this->afterActionCSS();
 
     }
 }
