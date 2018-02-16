@@ -45,7 +45,7 @@ class CSSConfig
      * is comments need to delete?
      * @var bool
      */
-    protected $cleanComments = false;
+    protected $cleanComments = true;
     /**
      * минимизируем выходной css файл в 1 строку
      * minify output css in one string
@@ -57,7 +57,7 @@ class CSSConfig
      * minify output css by pattern 1 class = 1 string
      * @var bool
      */
-    protected $minifyOneClassOneString = false;
+    protected $minifyOneClassOneString = true;
     /**
      * @var bool $mergeInOneFile
      * если указано, будет все собирать в один результирующий файл. Если нет, то будет делать минимизированные файлы по шаблоны temp_0.css temp_1.css исходя из порядкового номера
@@ -410,7 +410,19 @@ class CSSWalk
             } else {
                 $putContents = file_get_contents($item);
             }
-            // TODO сейчас у меня постобработка идет в mergeCSS, и если его не будет, то не будет и постобработки, эт надо поправить
+            // я не хочу складывать в 1 массив все стили для последующей обработки, т.к. он получится чересчур большой, что не есть надежно, поэтому делаю обработку прямо тут
+            if ($this->cleanComments) {
+                $putContents = preg_replace($this->cleanCommentsPattern, '', $putContents);
+            }
+            if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
+                $putContents = preg_replace($this->minifyAllInOneStringFirstPattern, '', $putContents);
+                $putContents = preg_replace($this->minifyRemoveSpacesPattern, '', $putContents);
+            }
+            if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
+                $putContents = preg_replace($this->oneClassOneStringPattern, '', $putContents);
+                $putContents = preg_replace($this->minifyRemoveSpacesPattern, '', $putContents);
+            }
+            $putContents = preg_replace($this->cleanFromCarriagePattern, "\r\n", $putContents);
             file_put_contents($tempCss, $putContents);
             $this->counter++;
         }
@@ -421,18 +433,6 @@ class CSSWalk
             $file = 'temp_'.$i.'.css';
             if (file_exists($file)) {
                 $tempFile = file_get_contents($file);
-                if ($this->cleanComments) {
-                    $tempFile = preg_replace($this->cleanCommentsPattern, '', $tempFile);
-                }
-                if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
-                    $tempFile = preg_replace($this->minifyAllInOneStringFirstPattern, '', $tempFile);
-                    $tempFile = preg_replace($this->minifyRemoveSpacesPattern, '', $tempFile);
-                }
-                if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
-                    $tempFile = preg_replace($this->oneClassOneStringPattern, '', $tempFile);
-                    $tempFile = preg_replace($this->minifyRemoveSpacesPattern, '', $tempFile);
-                }
-                $tempFile = preg_replace($this->cleanFromCarriagePattern, "\r\n", $tempFile);
                 file_put_contents($this->resultCSS,$tempFile,FILE_APPEND);
                 unlink($file);
             }
