@@ -1,5 +1,7 @@
 <?php
 ini_set('max_execution_time', 90000);
+$start = microtime(true);
+$mem_start = memory_get_usage();
 class CSSConfig
 {
     /**
@@ -313,9 +315,9 @@ class CSSClassesFromPages
         foreach ($links as $vi) {
             if ( $vi !== $this->mainPageLink) {
                 if (strpos($vi,'/') !== 0) {
-                    $tempResource = file_get_contents($this->mainPageLink.'/'.$vi);
+                    $tempResource = @file_get_contents($this->mainPageLink.'/'.$vi);
                 } else {
-                    $tempResource = file_get_contents($this->mainPageLink.$vi);
+                    $tempResource = @file_get_contents($this->mainPageLink.$vi);
                 }
 
             } else {
@@ -373,36 +375,42 @@ class CSSWalk
             foreach ($classesArray as $html) {
                 $singleClassPattern = '/\.+\b'.$html.'\b/u';
                 foreach ($cssArray['class'] as $val) {
-                    if(!strpos($val[0], '#')) {
+                    $val[0] = trim($val[0]);
+                    if(!strstr($val[0], '#')) {
                         if(!in_array($val[0], $fullClasses)) {
-                            $fullClasses[]= trim($val[0]);
+                            $fullClasses[]= $val[0];
                         }
                     }
                     if(preg_match($singleClassPattern, $val[0])) {
-                        $usedClasses[] = trim($val[0]);
+                        $usedClasses[] = $val[0];
                     }
                 }
             }
             $notUsedClasses = array_diff($fullClasses,$usedClasses,array(''));
             $putContents = '';
-            foreach ($fullClasses as $ki => $val_arr) {
-                if(in_array($val_arr,$notUsedClasses) && strstr($val_arr, '.')) {
-                    $searchClassPattern = '/\Q'.$val_arr.'\E(?=[\s,\z]{0,}{)/u';
-                    if ($putContents) {
-                        $tempCSSFileContent = $putContents;
-                    } else {
-                        $tempCSSFileContent = file_get_contents($item);
-                    }
-                    preg_match($searchClassPattern, $tempCSSFileContent, $findedClasses, PREG_OFFSET_CAPTURE);
-                    if(isset($findedClasses[0])) {
-                        $num = $findedClasses[0][1];
-                        $last = strpos($tempCSSFileContent,'}',$num);
-                        $lng = $last - $num;
-                        $tempCSSFileContent = substr_replace($tempCSSFileContent,'',$num,$lng+1);
-                        $putContents = $tempCSSFileContent;
+            if (!empty($notUsedClasses)) {
+                foreach ($fullClasses as $ki => $val_arr) {
+                    if (in_array($val_arr, $notUsedClasses) && strstr($val_arr, '.')) {
+                        $searchClassPattern = '/\Q' . $val_arr . '\E(?=[\s,\z]{0,}{)/u';
+                        if ($putContents) {
+                            $tempCSSFileContent = $putContents;
+                        } else {
+                            $tempCSSFileContent = file_get_contents($item);
+                        }
+                        preg_match($searchClassPattern, $tempCSSFileContent, $findedClasses, PREG_OFFSET_CAPTURE);
+                        if (isset($findedClasses[0])) {
+                            $num = $findedClasses[0][1];
+                            $last = strpos($tempCSSFileContent, '}', $num);
+                            $lng = $last - $num;
+                            $tempCSSFileContent = substr_replace($tempCSSFileContent, '', $num, $lng + 1);
+                            $putContents = $tempCSSFileContent;
+                        }
                     }
                 }
+            } else {
+                $putContents = file_get_contents($item);
             }
+            // TODO сейчас у меня постобработка идет в mergeCSS, и если его не будет, то не будет и постобработки, эт надо поправить
             file_put_contents($tempCss, $putContents);
             $this->counter++;
         }
@@ -450,3 +458,7 @@ class CSSStart
     }
 }
 $styles = new CSSStart();
+
+echo 'Время выполнения скрипта: '.(microtime(true) - $start).' сек.<br>';
+$mem_end = memory_get_usage() - $mem_start;
+echo 'Занял памяти '.$mem_end;
