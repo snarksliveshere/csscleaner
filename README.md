@@ -1,7 +1,3 @@
-пока в стадии разработки
-
-not ready yet
-
 css cleaner
 
 remove unused classes from css
