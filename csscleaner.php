@@ -373,7 +373,7 @@ class CSSWalk
             $usedClasses = [];
             $fullClasses = [];
             foreach ($classesArray as $html) {
-                $singleClassPattern = '/\.+\b'.$html.'\b/u';
+                $singleClassPattern = '/\.+\b'.preg_quote($html).'\b/u';
                 foreach ($cssArray['class'] as $val) {
                     $val[0] = trim($val[0]);
                     if(!strstr($val[0], '#')) {
