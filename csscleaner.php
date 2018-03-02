@@ -411,19 +411,21 @@ class CSSWalk
                 $putContents = file_get_contents($item);
             }
             // я не хочу складывать в 1 массив все стили для последующей обработки, т.к. он получится чересчур большой, что не есть надежно, поэтому делаю обработку прямо тут
-            if ($this->cleanComments) {
-                $putContents = preg_replace($this->cleanCommentsPattern, '', $putContents);
+            if($putContents) {
+                 if ($this->cleanComments) {
+                    $putContents = preg_replace($this->cleanCommentsPattern, '', $putContents);
+                }
+                if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
+                    $putContents = preg_replace($this->minifyAllInOneStringFirstPattern, '', $putContents);
+                    $putContents = preg_replace($this->minifyRemoveSpacesPattern, '', $putContents);
+                }
+                if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
+                    $putContents = preg_replace($this->oneClassOneStringPattern, '', $putContents);
+                    $putContents = preg_replace($this->minifyRemoveSpacesPattern, '', $putContents);
+                }
+                $putContents = preg_replace($this->cleanFromCarriagePattern, "\r\n", $putContents);
+                file_put_contents($tempCss, $putContents);
             }
-            if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
-                $putContents = preg_replace($this->minifyAllInOneStringFirstPattern, '', $putContents);
-                $putContents = preg_replace($this->minifyRemoveSpacesPattern, '', $putContents);
-            }
-            if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
-                $putContents = preg_replace($this->oneClassOneStringPattern, '', $putContents);
-                $putContents = preg_replace($this->minifyRemoveSpacesPattern, '', $putContents);
-            }
-            $putContents = preg_replace($this->cleanFromCarriagePattern, "\r\n", $putContents);
-            file_put_contents($tempCss, $putContents);
             $this->counter++;
         }
     }
