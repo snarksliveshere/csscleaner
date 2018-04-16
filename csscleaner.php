@@ -154,7 +154,7 @@ class ClassesRegular
      * @var string
      */
     protected $minifyAllInOneStringFirstPattern = "/([\r\n]{1,})|(\s*?(?={))/i";
-    protected $minifyRemoveSpacesPattern = '/(?<=\:)\s*?/';
+    protected $minifyRemoveSpacesPattern = '/(?<=\:|{|;)\s*?/';
     /**
      * 1 string 1 class
      * @var string
