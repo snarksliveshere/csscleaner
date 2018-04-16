@@ -2,6 +2,53 @@
 ini_set('max_execution_time', 90000);
 $start = microtime(true);
 $mem_start = memory_get_usage();
+class RegsHelper
+{
+    static public $cleanFromCarriagePattern = '/[\r\n]{2,}/i';
+
+    /**
+     * minify alla in one string - 2 preg
+     * @var string
+     */
+    static public $minifyAllInOneStringFirstPattern = "/([\r\n]{1,})|(\s*?(?={))/i";
+    static public $minifyRemoveSpacesPattern = '/(?<=\:|{|;)\s*?/';
+    /**
+     * 1 string 1 class
+     * @var string
+     */
+    static public $oneClassOneStringPattern = "/((?<!})((\\r\\n)|(\\n)|(\\r)))/";
+    /**
+     * clean comments
+     * @var string
+     */
+    static public $cleanCommentsPattern = '!/\*.*?\*/!s';
+    /**
+     * css REGEXP
+     * @var string
+     */
+    static public $cssPattern = '~class=\"(?P<class>[_a-z\sA-Z1-9-]{0,})\"~';
+    /**
+     * @var string
+     */
+    static public $classInCSSPattern = '~(?P<class>[^\}\{\\\/]*)\{(\n*.*\n)?[^\}\{]*\}~';
+    static public $jsPattern1 = '\$\((\'|\")(?P<selector1>\..+?)(\'|\")\)';
+    /**
+     * @var string
+     */
+    static public $jsPattern2 = '(addClass|removeClass|toggleClass)\((\'|\")(?P<selector2>.+?)(\'|\")';
+    /**
+     * @var string
+     */
+    static public $jsPattern3 = 'class=\"(?P<selector3>[_a-z\sA-Z1-9-]{0,})\"';
+    /**
+     * @var string
+     */
+    static public $jsPattern4 = '\$\((\s|\"|\')(.+)(\s|\"|\')\).on\((\s|\"|\')(.+?)(\'|\"),(\s|\'|\")(?P<selector4>.+?)(\s|\'|\")';
+    /**
+     * @var string
+     */
+    static public $pattern_media = '~@media.*\(.+\).*\{[^\}][^s\}][\s\S]{3,}\}\s*\}~U';
+}
 class CSSConfig
 {
     /**
@@ -15,7 +62,7 @@ class CSSConfig
      * путь к папке, где лежат css файлы
      * way to the folder with css files
      */
-    protected $customPath = __DIR__.'/assets/template/';
+    protected $customPath = __DIR__.'/assets/template/demo10/';
     /**
      * @var string
      * название папки, где лежат js скрипты
@@ -27,13 +74,13 @@ class CSSConfig
      * название папки, где лежат css. Оптимально сделать копию папки, чтобы не чистить такие bootstrap.css & css, которые идут вместе с подключаемыми библиотеками
      * name of the folder with css files. The good way is copy css folder without bootstrap.css and css from outer js libs
      */
-    protected $cssFolder = 'css2';
+    protected $cssFolder = 'css';
     /**
      * @var string
      * адрес главной страницы сайта
      * main page url
      */
-    protected $mainPageLink = 'http://demo4.ru';
+    protected $mainPageLink = 'http://demo10.ardmedia.ru';
     /**
      * @var string
      * название файла, которые получится на выходе
@@ -373,7 +420,7 @@ class CSSWalk
             $usedClasses = [];
             $fullClasses = [];
             foreach ($classesArray as $html) {
-                $singleClassPattern = '/\.+\b'.preg_quote($html).'\b/u';
+                $singleClassPattern = '/\.+\b'.preg_quote($html).'\b/';
                 foreach ($cssArray['class'] as $val) {
                     $val[0] = trim($val[0]);
                     if(!strstr($val[0], '#')) {
@@ -411,21 +458,19 @@ class CSSWalk
                 $putContents = file_get_contents($item);
             }
             // я не хочу складывать в 1 массив все стили для последующей обработки, т.к. он получится чересчур большой, что не есть надежно, поэтому делаю обработку прямо тут
-            if($putContents) {
-                 if ($this->cleanComments) {
-                    $putContents = preg_replace($this->cleanCommentsPattern, '', $putContents);
-                }
-                if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
-                    $putContents = preg_replace($this->minifyAllInOneStringFirstPattern, '', $putContents);
-                    $putContents = preg_replace($this->minifyRemoveSpacesPattern, '', $putContents);
-                }
-                if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
-                    $putContents = preg_replace($this->oneClassOneStringPattern, '', $putContents);
-                    $putContents = preg_replace($this->minifyRemoveSpacesPattern, '', $putContents);
-                }
-                $putContents = preg_replace($this->cleanFromCarriagePattern, "\r\n", $putContents);
-                file_put_contents($tempCss, $putContents);
+            if ($this->cleanComments) {
+                $putContents = preg_replace(RegsHelper::$cleanCommentsPattern, '', $putContents);
             }
+            if ($this->minifyAllInOneString && (false === $this->minifyOneClassOneString)) {
+                $putContents = preg_replace(RegsHelper::$minifyAllInOneStringFirstPattern, '', $putContents);
+                $putContents = preg_replace(RegsHelper::$minifyRemoveSpacesPattern, '', $putContents);
+            }
+            if ($this->minifyOneClassOneString && (false === $this->minifyAllInOneString)) {
+                $putContents = preg_replace(RegsHelper::$oneClassOneStringPattern, '', $putContents);
+                $putContents = preg_replace(RegsHelper::$minifyRemoveSpacesPattern, '', $putContents);
+            }
+            $putContents = preg_replace(RegsHelper::$cleanFromCarriagePattern, "\r\n", $putContents);
+            file_put_contents($tempCss, $putContents);
             $this->counter++;
         }
     }
