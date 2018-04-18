@@ -487,3 +487,37 @@ $styles = new CSSStart();
 echo 'Время выполнения скрипта: ' . (microtime(true) - $start) . ' сек.<br>';
 $mem_end = memory_get_usage() - $mem_start;
 echo 'Занял памяти ' . $mem_end;
+
+/*
+ Выстраиваются media
+@media (max-width: 1199.98px) {
+  .between500_800 {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .down800 {
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .between500_8900 {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 576px) and (max-width: 767.98px) {
+  .only456 {
+    font-size: 18px;
+  }
+}
+
+@media (min-width: 992px) and (max-width: 1199.98px) {
+  .only4561 {
+    font-size: 18px;
+  }
+}
+
+ * */
