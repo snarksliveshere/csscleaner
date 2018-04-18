@@ -2,53 +2,7 @@
 ini_set('max_execution_time', 90000);
 $start = microtime(true);
 $mem_start = memory_get_usage();
-class RegsHelper
-{
-    static public $cleanFromCarriagePattern = '/[\r\n]{2,}/i';
 
-    /**
-     * minify alla in one string - 2 preg
-     * @var string
-     */
-    static public $minifyAllInOneStringFirstPattern = "/([\r\n]{1,})|(\s*?(?={))/i";
-    static public $minifyRemoveSpacesPattern = '/(?<=\:|{|;)\s*?/';
-    /**
-     * 1 string 1 class
-     * @var string
-     */
-    static public $oneClassOneStringPattern = "/((?<!})((\\r\\n)|(\\n)|(\\r)))/";
-    /**
-     * clean comments
-     * @var string
-     */
-    static public $cleanCommentsPattern = '!/\*.*?\*/!s';
-    /**
-     * css REGEXP
-     * @var string
-     */
-    static public $cssPattern = '~class=\"(?P<class>[_a-z\sA-Z1-9-]{0,})\"~';
-    /**
-     * @var string
-     */
-    static public $classInCSSPattern = '~(?P<class>[^\}\{\\\/]*)\{(\n*.*\n)?[^\}\{]*\}~';
-    static public $jsPattern1 = '\$\((\'|\")(?P<selector1>\..+?)(\'|\")\)';
-    /**
-     * @var string
-     */
-    static public $jsPattern2 = '(addClass|removeClass|toggleClass)\((\'|\")(?P<selector2>.+?)(\'|\")';
-    /**
-     * @var string
-     */
-    static public $jsPattern3 = 'class=\"(?P<selector3>[_a-z\sA-Z1-9-]{0,})\"';
-    /**
-     * @var string
-     */
-    static public $jsPattern4 = '\$\((\s|\"|\')(.+)(\s|\"|\')\).on\((\s|\"|\')(.+?)(\'|\"),(\s|\'|\")(?P<selector4>.+?)(\s|\'|\")';
-    /**
-     * @var string
-     */
-    static public $pattern_media = '~@media.*\(.+\).*\{[^\}][^s\}][\s\S]{3,}\}\s*\}~U';
-}
 class CSSConfig
 {
     /**
@@ -62,7 +16,7 @@ class CSSConfig
      * путь к папке, где лежат css файлы
      * way to the folder with css files
      */
-    protected $customPath = __DIR__.'/assets/template/demo10/';
+    protected $customPath = __DIR__ . '/assets/template/demo10/';
     /**
      * @var string
      * название папки, где лежат js скрипты
@@ -111,13 +65,78 @@ class CSSConfig
      */
     protected $mergeInOneFile = true;
 }
+
+class RegsHelper
+{
+    /**
+     * @var string
+     */
+    static public $patternHref = '~href="(?<link>.+?)"~';
+    /**
+     * @var string
+     */
+    static public $cleanFromCarriagePattern = '/[\r\n]{2,}/i';
+
+    /**
+     * minify alla in one string - 2 preg
+     * @var string
+     */
+    static public $minifyAllInOneStringFirstPattern = "/([\r\n]{1,})|(\s*?(?={))/i";
+    /**
+     * @var string
+     */
+    static public $minifyRemoveSpacesPattern = '/(?<=\:|{|;)\s*?/';
+    /**
+     * 1 string 1 class
+     * @var string
+     */
+    static public $oneClassOneStringPattern = "/((?<!})((\\r\\n)|(\\n)|(\\r)))/";
+    /**
+     * clean comments
+     * @var string
+     */
+    static public $cleanCommentsPattern = '!/\*.*?\*/!s';
+    /**
+     * css REGEXP
+     * @var string
+     */
+    static public $cssPattern = '~class=\"(?P<class>[_a-z\sA-Z1-9-]{0,})\"~';
+    /**
+     * @var string
+     */
+    static public $classInCSSPattern = '~(?P<class>[^\}\{\\\/]*)\{(\n*.*\n)?[^\}\{]*\}~';
+    /**
+     * @var string
+     */
+    static public $jsPattern1 = '\$\((\'|\")(?P<selector1>\..+?)(\'|\")\)';
+    /**
+     * @var string
+     */
+    static public $jsPattern2 = '(addClass|removeClass|toggleClass)\((\'|\")(?P<selector2>.+?)(\'|\")';
+    /**
+     * @var string
+     */
+    static public $jsPattern3 = 'class=\"(?P<selector3>[_a-z\sA-Z1-9-]{0,})\"';
+    /**
+     * @var string
+     */
+    static public $jsPattern4 = '\$\((\s|\"|\')(.+)(\s|\"|\')\).on\((\s|\"|\')(.+?)(\'|\"),(\s|\'|\")(?P<selector4>.+?)(\s|\'|\")';
+
+
+    /**
+     * @var string
+     */
+    static public $pattern_media = '~@media.*\(.+\).*\{[^\}][^s\}][\s\S]{3,}\}\s*\}~U';
+
+}
+
 class CleanStyle
     extends CSSConfig
 {
     /**
      * @var array
      */
-    protected static $jsClassesPath= [];
+    protected static $jsClassesPath = [];
     /**
      * @var array
      */
@@ -129,6 +148,7 @@ class CleanStyle
     protected $allJSClasses = [];
     protected $allCSSClasses = [];
     protected $allClasses = [];
+
     /**
      * @param $dirname
      * @param $ext
@@ -136,49 +156,51 @@ class CleanStyle
     protected static function getAllClassesPath($dirname, $ext)
     {
         $dir = opendir($dirname);
-        while (($file = readdir($dir)) !== false)
-        {
+        while (($file = readdir($dir)) !== false) {
             // Если файл обрабатываем его содержимое
-            if($file != "." && $file != "..")
-            {
+            if ($file != "." && $file != "..") {
                 // Если имеем дело с файлом - регистрируем его
-                $fullPath = $dirname."/".$file;
-                if(is_file($fullPath)
-                    && strpos($fullPath,'.'.$ext)) {
-                    if(substr($fullPath,-2) == 'js') {
-                        self::$jsClassesPath[] =$fullPath;
-                    } elseif (substr($fullPath,-3) == 'css') {
-                        self::$cssClassesPath[] =$fullPath;
+                $fullPath = $dirname . "/" . $file;
+                if (is_file($fullPath)
+                    && strpos($fullPath, '.' . $ext)
+                ) {
+                    if (substr($fullPath, -2) == 'js') {
+                        self::$jsClassesPath[] = $fullPath;
+                    } elseif (substr($fullPath, -3) == 'css') {
+                        self::$cssClassesPath[] = $fullPath;
                     }
                 }
                 // Если перед нами директория, вызываем рекурсивно
-                if(is_dir($fullPath)) {
-                    self::getAllClassesPath($fullPath,$ext);
+                if (is_dir($fullPath)) {
+                    self::getAllClassesPath($fullPath, $ext);
                 }
             }
         }
         // Закрываем директорию
         closedir($dir);
     }
+
     /**
      * @param $path
      * @return array
      */
     public function getCSSClasses()
     {
-        $dirname = $this->customPath.$this->cssFolder;
+        $dirname = $this->customPath . $this->cssFolder;
         self::getAllClassesPath($dirname, 'css');
     }
+
     /**
      * @param $path
      * @return array
      */
     public function getJSClasses()
     {
-        $dirname = $this->customPath.$this->jsFolder;
+        $dirname = $this->customPath . $this->jsFolder;
         self::getAllClassesPath($dirname, 'js');
     }
 }
+
 /**
  * looking for css classes in files with RegExp
  * Class ClassesRegular
@@ -188,81 +210,33 @@ class ClassesRegular
     extends CleanStyle
 {
     protected $dataClasses = [];
-    /**
-     * @var string
-     */
-    /**
-     * clean css from caret
-     */
-    protected $cleanFromCarriagePattern = '/[\r\n]{2,}/i';
 
-    /**
-     * minify alla in one string - 2 preg
-     * @var string
-     */
-    protected $minifyAllInOneStringFirstPattern = "/([\r\n]{1,})|(\s*?(?={))/i";
-    protected $minifyRemoveSpacesPattern = '/(?<=\:|{|;)\s*?/';
-    /**
-     * 1 string 1 class
-     * @var string
-     */
-    protected $oneClassOneStringPattern = "/((?<!})((\\r\\n)|(\\n)|(\\r)))/";
-    /**
-     * clean comments
-     * @var string
-     */
-    protected $cleanCommentsPattern = '!/\*.*?\*/!s';
-    /**
-     * css REGEXP
-     * @var string
-     */
-    protected $cssPattern = '~class=\"(?P<class>[_a-z\sA-Z1-9-]{0,})\"~';
-    /**
-     * @var string
-     */
-    protected $classInCSSPattern= '~(?P<class>[^\}\{\\\/]*)\{(\n*.*\n)?[^\}\{]*\}~';
-    protected $jsPattern1 = '\$\((\'|\")(?P<selector1>\..+?)(\'|\")\)';
-    /**
-     * @var string
-     */
-    protected $jsPattern2= '(addClass|removeClass|toggleClass)\((\'|\")(?P<selector2>.+?)(\'|\")';
-    /**
-     * @var string
-     */
-    protected $jsPattern3 = 'class=\"(?P<selector3>[_a-z\sA-Z1-9-]{0,})\"';
-    /**
-     * @var string
-     */
-    protected $jsPattern4 = '\$\((\s|\"|\')(.+)(\s|\"|\')\).on\((\s|\"|\')(.+?)(\'|\"),(\s|\'|\")(?P<selector4>.+?)(\s|\'|\")';
-    /**
-     * @param $data
-     * @return array
-     */
     public function getJSFromFile($data)
     {
-        $jsCommonPattern = "/(?J)({$this->jsPattern1})|({$this->jsPattern2})|({$this->jsPattern3})|({$this->jsPattern4})/";
+        $jsCommonPattern = '/(?J)(' . RegsHelper::$jsPattern1 . ')|(' . RegsHelper::$jsPattern2 . ')|(' . RegsHelper::$jsPattern3 . ')|(' . RegsHelper::$jsPattern4 . ')/';
         foreach ($data as $datum) {
             $fileData = file_get_contents($datum);
-            preg_match_all($jsCommonPattern, $fileData,$tempArr);
+            preg_match_all($jsCommonPattern, $fileData, $tempArr);
             foreach ($tempArr as $ki => $item) {
-                if (stripos($ki,'selector') === 0 ) {
+                if (stripos($ki, 'selector') === 0) {
                     if ($ki == 'selector2' || $ki == 'selector3') {
                         $item = array_map(
-                            function($n)
-                            {
-                                if (strstr($n,' ')) {
+                            function ($n) {
+                                if (strstr($n, ' ')) {
                                     $servArr = explode(' ', $n);
-                                    $servArr = array_map(function ($a) { return '.'.$a;}, $servArr);
+                                    $servArr = array_map(function ($a) {
+                                        return '.' . $a;
+                                    }, $servArr);
                                     $n = implode(' ', $servArr);
                                     return $n;
                                 } else {
-                                    return '.'.$n;
+                                    return '.' . $n;
                                 }
                             },
                             $item);
                     }
                     if (count($this->dataClasses)) {
-                        $this->dataClasses =  array_merge($this->dataClasses,$item);
+                        $this->dataClasses = array_merge($this->dataClasses, $item);
                     } else {
                         $this->dataClasses = $item;
                     }
@@ -271,6 +245,7 @@ class ClassesRegular
 
         }
     }
+
     public function cleanClasses($data)
     {
         $tempArray = [];
@@ -280,15 +255,15 @@ class ClassesRegular
             if (empty($datum) || $datum == '.') {
                 continue;
             }
-            if(strpos($val, ' ')) {
-                $temps  = explode(' ',$val);
+            if (strpos($val, ' ')) {
+                $temps = explode(' ', $val);
                 foreach ($temps as $tempum) {
-                    if(strlen($tempum)!=1) {
+                    if (strlen($tempum) != 1) {
                         $tempArray[] = $tempum;
                     }
                 }
             } else {
-                if(strlen($val)!=1) {
+                if (strlen($val) != 1) {
                     $tempArray[] = $val;
                 }
             }
@@ -298,7 +273,7 @@ class ClassesRegular
             if (!strstr($item, '.')) {
                 continue;
             }
-            $item = str_replace(',','', $item);
+            $item = str_replace(',', '', $item);
             if (strpos($item, '.') !== 0) {
                 $a = explode('.', $item);
                 unset($a[0]);
@@ -318,33 +293,32 @@ class ClassesRegular
 class LinksFromSite
     extends ClassesRegular
 {
-    protected $patternHref = '~href="(?<link>.+?)"~';
     protected $linksFromPages = [];
 
     public function getAllLinks()
     {
         $resourceLink = file_get_contents($this->mainPageLink);
-        preg_match_all($this->patternHref, $resourceLink,$allLinks);
+        preg_match_all(RegsHelper::$patternHref, $resourceLink, $allLinks);
         foreach ($allLinks['link'] as $allLink) {
             if ($this->urlWithoutHTML) {
                 // проверяем в том числе и ошибки в коде
-                if ( stristr($allLink, 'http://')
+                if (stristr($allLink, 'http://')
                     || stristr($allLink, 'https://')
                     || stristr($allLink, '.')
                     || strlen($allLink) < 2
-                    || stristr($allLink,'>')
-                    || stristr($allLink,'<')
-                    || stristr($allLink,'"')
-                    || stristr($allLink,'\'')
-                    || stristr($allLink,'#')
-                    || stristr($allLink,':')
-                    || stristr($allLink,$this->mainPageLink)
+                    || stristr($allLink, '>')
+                    || stristr($allLink, '<')
+                    || stristr($allLink, '"')
+                    || stristr($allLink, '\'')
+                    || stristr($allLink, '#')
+                    || stristr($allLink, ':')
+                    || stristr($allLink, $this->mainPageLink)
                 ) {
                     continue;
                 }
                 $this->linksFromPages[] = $allLink;
             } else {
-                if ( substr($allLink,-4) == 'html' && !stristr($allLink, 'http://') && !stristr($allLink, 'https://') ) {
+                if (substr($allLink, -4) == 'html' && !stristr($allLink, 'http://') && !stristr($allLink, 'https://')) {
                     $this->linksFromPages[] = $allLink;
                 }
             }
@@ -357,14 +331,15 @@ class CSSClassesFromPages
     extends LinksFromSite
 {
     protected $storageClasses = [];
+
     public function getClassesFromPages($links)
     {
         foreach ($links as $vi) {
-            if ( $vi !== $this->mainPageLink) {
-                if (strpos($vi,'/') !== 0) {
-                    $tempResource = @file_get_contents($this->mainPageLink.'/'.$vi);
+            if ($vi !== $this->mainPageLink) {
+                if (strpos($vi, '/') !== 0) {
+                    $tempResource = @file_get_contents($this->mainPageLink . '/' . $vi);
                 } else {
-                    $tempResource = @file_get_contents($this->mainPageLink.$vi);
+                    $tempResource = @file_get_contents($this->mainPageLink . $vi);
                 }
 
             } else {
@@ -373,23 +348,22 @@ class CSSClassesFromPages
             if (false === $tempResource) {
                 continue;
             }
-            preg_match_all($this->cssPattern, $tempResource,$tempArray);
+            preg_match_all(RegsHelper::$cssPattern, $tempResource, $tempArray);
             foreach ($tempArray['class'] as $val) {
                 $val = trim($val);
                 // разбиваю классы, если в html указано 2 или 3 класса  - у меня есть такие вещи
-                if (strlen($val) <=1) {
+                if (strlen($val) <= 1) {
                     continue;
                 }
-                if(strpos($val, ' ')) {
-                    $temps  = explode(' ',$val);
+                if (strpos($val, ' ')) {
+                    $temps = explode(' ', $val);
                     foreach ($temps as $vall) {
-                        if (strlen($val) <=1) {
+                        if (strlen($val) <= 1) {
                             continue;
                         }
                         $this->storageClasses[] = $vall;
                     }
-                }
-                else {
+                } else {
                     $this->storageClasses[] = $val;
                 }
             }
@@ -400,7 +374,7 @@ class CSSClassesFromPages
 
     public function getAllClasses()
     {
-        $this->allClasses = array_merge($this->allCSSClasses,$this->allJSClasses);
+        $this->allClasses = array_merge($this->allCSSClasses, $this->allJSClasses);
         $this->allClasses = array_unique($this->allClasses);
         $this->allClasses = array_values($this->allClasses);
     }
@@ -411,29 +385,30 @@ class CSSWalk
 {
     protected $lngCounter = 0;
     protected $counter = 0;
+
     public function getCSS($classesArray)
     {
         foreach (self::$cssClassesPath as $ki_css => $item) {
-            $tempCss = 'temp_'.$ki_css.'.css';
+            $tempCss = 'temp_' . $ki_css . '.css';
             $cssFile = file_get_contents($item);
-            preg_match_all($this->classInCSSPattern, $cssFile, $cssArray, PREG_OFFSET_CAPTURE);
+            preg_match_all(RegsHelper::$classInCSSPattern, $cssFile, $cssArray, PREG_OFFSET_CAPTURE);
             $usedClasses = [];
             $fullClasses = [];
             foreach ($classesArray as $html) {
-                $singleClassPattern = '/\.+\b'.preg_quote($html).'\b/';
+                $singleClassPattern = '/\.+\b' . preg_quote($html) . '\b/';
                 foreach ($cssArray['class'] as $val) {
                     $val[0] = trim($val[0]);
-                    if(!strstr($val[0], '#')) {
-                        if(!in_array($val[0], $fullClasses)) {
-                            $fullClasses[]= $val[0];
+                    if (!strstr($val[0], '#')) {
+                        if (!in_array($val[0], $fullClasses)) {
+                            $fullClasses[] = $val[0];
                         }
                     }
-                    if(preg_match($singleClassPattern, $val[0])) {
+                    if (preg_match($singleClassPattern, $val[0])) {
                         $usedClasses[] = $val[0];
                     }
                 }
             }
-            $notUsedClasses = array_diff($fullClasses,$usedClasses,array(''));
+            $notUsedClasses = array_diff($fullClasses, $usedClasses, array(''));
             $putContents = '';
             if (!empty($notUsedClasses)) {
                 foreach ($fullClasses as $ki => $val_arr) {
@@ -474,18 +449,20 @@ class CSSWalk
             $this->counter++;
         }
     }
+
     public function mergeCSS()
     {
-        for($i=0;$i<$this->counter;$i++) {
-            $file = 'temp_'.$i.'.css';
+        for ($i = 0; $i < $this->counter; $i++) {
+            $file = 'temp_' . $i . '.css';
             if (file_exists($file)) {
                 $tempFile = file_get_contents($file);
-                file_put_contents($this->resultCSS,$tempFile,FILE_APPEND);
+                file_put_contents($this->resultCSS, $tempFile, FILE_APPEND);
                 unlink($file);
             }
         }
     }
 }
+
 class CSSStart
     extends CSSWalk
 {
@@ -504,8 +481,9 @@ class CSSStart
         }
     }
 }
+
 $styles = new CSSStart();
 
-echo 'Время выполнения скрипта: '.(microtime(true) - $start).' сек.<br>';
+echo 'Время выполнения скрипта: ' . (microtime(true) - $start) . ' сек.<br>';
 $mem_end = memory_get_usage() - $mem_start;
-echo 'Занял памяти '.$mem_end;
+echo 'Занял памяти ' . $mem_end;
