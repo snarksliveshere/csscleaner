@@ -15,25 +15,25 @@ class CSSConfig
      * путь к папке, где лежат css файлы
      * way to the folder with css files
      */
-    protected $customPath = __DIR__.'/assets/template/';
+    protected $customPath = __DIR__.'/assets/';
     /**
      * @var string
      * название папки, где лежат js скрипты
      * name of the folder with js scripts
      */
-    protected $jsFolder = 'js';
+    protected $jsFolder = '';
     /**
      * @var string
      * название папки, где лежат css. Оптимально сделать копию папки, чтобы не чистить такие bootstrap.css & css, которые идут вместе с подключаемыми библиотеками
      * name of the folder with css files. The good way is copy css folder without bootstrap.css and css from outer js libs
      */
-    protected $cssFolder = 'css2';
+    protected $cssFolder = 'css';
     /**
      * @var string
      * адрес главной страницы сайта
      * main page url
      */
-    protected $mainPageLink = 'http://demo4.ru';
+    protected $mainPageLink = 'http://stroy.ardmedia.ru';
     /**
      * @var string
      * название файла, которые получится на выходе
@@ -447,8 +447,11 @@ class CSSStart
     public function __construct()
     {
         $this->getCSSClasses();
+
         $this->getJSClasses();
-        $this->getJSFromFile(self::$jsClassesPath);
+        if(null != $this->jsFolder) {
+            $this->getJSFromFile(self::$jsClassesPath);
+        }
         $this->cleanClasses($this->dataClasses);
         $this->getAllLinks();
         $this->getClassesFromPages($this->linksFromPages);
@@ -464,3 +467,4 @@ $styles = new CSSStart();
 echo 'Время выполнения скрипта: '.(microtime(true) - $start).' сек.<br>';
 $mem_end = memory_get_usage() - $mem_start;
 echo 'Занял памяти '.$mem_end;
+//TODO: похоже есть проблема с svg & +
