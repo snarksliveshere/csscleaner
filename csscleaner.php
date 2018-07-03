@@ -313,12 +313,23 @@ class CSSClassesFromPages
     public function getClassesFromPages($links)
     {
         foreach ($links as $vi) {
+
+
             if ( $vi !== $this->mainPageLink) {
+
+                $link = '';
+
                 if (strpos($vi,'/') !== 0) {
-                    $tempResource = @file_get_contents($this->mainPageLink.'/'.$vi);
+                    $link = $this->mainPageLink.'/'.$vi;
                 } else {
-                    $tempResource = @file_get_contents($this->mainPageLink.$vi);
+                    $link = $this->mainPageLink.$vi;
                 }
+                $headers = get_headers($link);
+                if(false !== strripos($headers[0], '404')){
+                    continue;
+                }
+
+                $tempResource = file_get_contents($link);
 
             } else {
                 $tempResource = file_get_contents($this->mainPageLink);
