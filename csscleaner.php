@@ -1,5 +1,8 @@
 <?php
 ini_set('max_execution_time', 90000);
+ini_set('memory_limit', '3000M');
+
+
 $start = microtime(true);
 $mem_start = memory_get_usage();
 class CSSConfig
@@ -367,6 +370,7 @@ class CSSClassesFromPages
         $this->allClasses = array_merge($this->allCSSClasses,$this->allJSClasses);
         $this->allClasses = array_unique($this->allClasses);
         $this->allClasses = array_values($this->allClasses);
+        $this->allClasses = array_diff($this->allClasses, ['', null]);
     }
 }
 
@@ -383,14 +387,20 @@ class CSSWalk
             preg_match_all($this->classInCSSPattern, $cssFile, $cssArray, PREG_OFFSET_CAPTURE);
             $usedClasses = [];
             $fullClasses = [];
+            $tagsArr = [];
             foreach ($classesArray as $html) {
                 $singleClassPattern = '/\.+\b'.preg_quote($html).'\b/u';
                 foreach ($cssArray['class'] as $val) {
                     $val[0] = trim($val[0]);
-                    if(!strstr($val[0], '#')) {
-                        if(!in_array($val[0], $fullClasses)) {
-                            $fullClasses[]= $val[0];
+                    if(!strstr($val[0], '#') ) {
+                        if (!strstr($val[0], '.')) {
+                            $tagsArr[] = $val[0];
+                        } else {
+                            if(!in_array($val[0], $fullClasses)) {
+                                $fullClasses[]= $val[0];
+                            }
                         }
+
                     }
                     if(preg_match($singleClassPattern, $val[0])) {
                         $usedClasses[] = $val[0];
@@ -478,4 +488,3 @@ $styles = new CSSStart();
 echo 'Время выполнения скрипта: '.(microtime(true) - $start).' сек.<br>';
 $mem_end = memory_get_usage() - $mem_start;
 echo 'Занял памяти '.$mem_end;
-//TODO: похоже есть проблема с svg & +
